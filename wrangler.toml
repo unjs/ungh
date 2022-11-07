@@ -3,6 +3,9 @@ main = "server/.output/server/index.mjs"
 workers_dev = true
 compatibility_date = "2022-09-10"
 account_id = "8ea39dfb7bb411de7fcff5444d7a5dbb"
+kv_namespaces = [
+  { binding = "UNGH_CACHE", id = "9a1210b2508f49ffab97f3da80ee0a63" }
+]
 
 [site]
 bucket = "server/.output/public"
