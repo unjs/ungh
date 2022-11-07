@@ -1,0 +1,17 @@
+{
+  "name": "ungh-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "cd server && pnpm dev",
+    "build": "cd server && pnpm build",
+    "lint": "eslint --ext .ts,.js,.mjs,.cjs .",
+    "release": "pnpm test && changelogen --release && git push --follow-tags && pnpm publish",
+    "test": "pnpm lint"
+  },
+  "devDependencies": {
+    "changelogen": "^0.3.5",
+    "eslint": "^8.27.0"
+  },
+  "packageManager": "pnpm@7.13.4"
+}

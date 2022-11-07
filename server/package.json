@@ -1,0 +1,10 @@
+{
+  "name": "ungh-server",
+  "scripts": {
+    "dev": "nitropack dev",
+    "build": "nitropack build"
+  },
+  "devDependencies": {
+    "nitropack": "^0.6.1"
+  }
+}
