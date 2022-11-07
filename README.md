@@ -12,7 +12,7 @@ UNGH provides a simplified, cached, and anonymous layer to make GitHub API more 
 
 This project is still under development.
 
-- [ ] Hosted service (MVP)
+- [x] Hosted MVP service (powered by cloudflare workers and KV)
 - [ ] Publish `ungh` js client to NPM
 - [ ] Implement token pool and open token donations
 - [ ] Implement `/contributors` endpoint
@@ -23,7 +23,7 @@ This project is still under development.
 
 GitHub repository information.
 
-**Example:** /gh/repo/unjs/h3
+**Example:** https://ungh.unjs.io/gh/repo/unjs/h3
 
 ```json
 {
@@ -46,7 +46,7 @@ GitHub repository information.
 
 GitHub organization information.
 
-**Example:** /gh/org/unjs
+**Example:** https://ungh.unjs.io/gh/org/unjs
 
 ```json
 {
@@ -58,11 +58,11 @@ GitHub organization information.
 }
 ```
 
-### `/gh/org/{owner}/repositories`
+### `/gh/org/{owner}/repos`
 
 GitHub organization repositories overview and overall stats.
 
-**Example:** /gh/org/unjs/repositories
+**Example:** https://ungh.unjs.io/gh/org/unjs/repos
 
 ```json
 {
@@ -82,8 +82,7 @@ GitHub organization repositories overview and overall stats.
       "stars": 93,
       "watchers": 93,
       "forks": 14
-    },
-    ...
+    }
   ]
 }
 ```
@@ -94,7 +93,7 @@ Get star information for one or more repositories or organizations.
 
 Multiple items can be separated by either `,` or `+` or ` ` (space). Each item can be either `{owner}/{org}` to specify one repository or `{owner}` to specify all organization repositories.
 
-**Example:** /gh/stars/nuxt/nuxt.js,nuxt/framework
+**Example:** https://ungh.unjs.io/gh/stars/nuxt/nuxt.js+nuxt/framework
 
 ```json
 {

@@ -1,5 +1,5 @@
 .nitro
 .output
-dist
-cache
+.cache
 .env
+dist
