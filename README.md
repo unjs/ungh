@@ -1,27 +1,27 @@
-# ungh
+# 🐙 UNGH
 
-> Anonymouse access to cached github APIs without rate limits!
+> Unlimited access to GitHub API
 
-## Why ungh?
+## Why UNGH?
 
-Accessing to basic github information should be fast, easy and straightforward. Github API is rate limited and requires an authentication token to increase limits. Even by using an API token, we need to share or generate it for each deployment and local development of apps and also deal with (increased) rate limits and per-deployment caching. Github REST API is also complex with (unnecessary) bigger payloads because of backward compatibility.
+Accessing to open source GitHub repository meta-data should be fast, easy, and straightforward. GitHub API is rate limited and requires an authentication token to increase limits. Even by using an API token, we need to share or generate it for each deployment and local development of apps and also deal with (increased) rate limits and deployment caching. GitHub REST API is also complex with (unnecessary) bigger payloads because of backward compatibility.
 
-UNGH provides a hosted service and client (upcoming) to overcome this limits.
+UNGH provides a simplified, cached, and anonymous layer to make GitHub API more enjoyable!
 
 ## Roadmap
 
 This project is still under development.
 
 - [ ] Hosted service (MVP)
-- [ ] Publish `ungh` client as NPM package
-- [ ] Implement token pool
+- [ ] Publish `ungh` js client to NPM
+- [ ] Implement token pool and open token donations
 - [ ] Implement `/contributors` endpoint
 
 ## API
 
 ### `/gh/repo/{owner}/{name}`
 
-Github repository information.
+GitHub repository information.
 
 **Example:** /gh/repo/unjs/h3
 
@@ -44,7 +44,7 @@ Github repository information.
 
 ### `/gh/org/{owner}`
 
-Github organization information.
+GitHub organization information.
 
 **Example:** /gh/org/unjs
 
@@ -60,7 +60,7 @@ Github organization information.
 
 ### `/gh/org/{owner}/repositories`
 
-Github organization repositories overview and overall stats.
+GitHub organization repositories overview and overall stats.
 
 **Example:** /gh/org/unjs/repositories
 
@@ -90,9 +90,9 @@ Github organization repositories overview and overall stats.
 
 ### `/gh/stars/{repos}`
 
-Get stars information for one or more repositories or organizations.
+Get star information for one or more repositories or organizations.
 
-Multiple items can be seperated by either `,` or `+` or ` ` (space). Each item can be either `{owner}/{org}` to specify one repository or `{owner}` to specify all organization repositories.
+Multiple items can be separated by either `,` or `+` or ` ` (space). Each item can be either `{owner}/{org}` to specify one repository or `{owner}` to specify all organization repositories.
 
 **Example:** /gh/stars/nuxt/nuxt.js,nuxt/framework
 
