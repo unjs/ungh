@@ -10,20 +10,20 @@ UNGH provides a simplified, cached, and anonymous layer to make GitHub API more 
 
 ## Roadmap
 
-This project is still under development.
-
 - [x] Hosted MVP service (powered by cloudflare workers and KV)
 - [ ] Publish `ungh` js client to NPM
 - [ ] Implement token pool and open token donations
 - [ ] Implement `/contributors` endpoint
 
+**Note:** This project is still under development and API might change.
+
 ## API
 
-### `/gh/repo/{owner}/{name}`
+### `/repo/{owner}/{name}`
 
 GitHub repository information.
 
-**Example:** https://ungh.unjs.io/gh/repo/unjs/h3
+**Example:** https://ungh.unjs.io/repo/unjs/h3
 
 ```json
 {
@@ -42,11 +42,11 @@ GitHub repository information.
 }
 ```
 
-### `/gh/org/{owner}`
+### `/org/{owner}`
 
 GitHub organization information.
 
-**Example:** https://ungh.unjs.io/gh/org/unjs
+**Example:** https://ungh.unjs.io/org/unjs
 
 ```json
 {
@@ -58,11 +58,11 @@ GitHub organization information.
 }
 ```
 
-### `/gh/org/{owner}/repos`
+### `/org/{owner}/repos`
 
 GitHub organization repositories overview and overall stats.
 
-**Example:** https://ungh.unjs.io/gh/org/unjs/repos
+**Example:** https://ungh.unjs.io/org/unjs/repos
 
 ```json
 {
@@ -87,13 +87,13 @@ GitHub organization repositories overview and overall stats.
 }
 ```
 
-### `/gh/stars/{repos}`
+### `/stars/{repos}`
 
 Get star information for one or more repositories or organizations.
 
 Multiple items can be separated by either `,` or `+` or ` ` (space). Each item can be either `{owner}/{org}` to specify one repository or `{owner}/*` to specify all organization repositories.
 
-**Example:** https://ungh.unjs.io/gh/stars/nuxt/nuxt.js+nuxt/framework
+**Example:** https://ungh.unjs.io/stars/nuxt/nuxt.js+nuxt/framework
 
 ```json
 {
