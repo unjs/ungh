@@ -4,6 +4,9 @@ export default defineNitroConfig({
   runtimeConfig: {
     GH_TOKEN: process.env.GH_TOKEN
   },
+  routeRules: {
+    '/gh/**': { cache: { maxAge: 60 } }
+  },
   storage: {
     '/cache/gh': {
       driver: 'cloudflare-kv-binding',

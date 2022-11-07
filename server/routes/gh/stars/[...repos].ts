@@ -1,5 +1,4 @@
 import { ghRepo } from '~/utils/github'
-import { apiResponse } from '~/utils/response'
 
 export default eventHandler(async (event) => {
   const repoSources = await Promise.all(
@@ -21,8 +20,8 @@ export default eventHandler(async (event) => {
   const stars = Object.fromEntries(starsArr)
   const totalStars = starsArr.reduce((c, r) => c + r[1], 0)
 
-  return apiResponse(event, {
+  return {
     totalStars,
     stars
-  })
+  }
 })

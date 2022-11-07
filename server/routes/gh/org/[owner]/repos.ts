@@ -1,5 +1,4 @@
 import { ghFetch } from '~/utils/github'
-import { apiResponse } from '~/utils/response'
 import type { GithubRepo } from '~types'
 
 export default eventHandler(async (event) => {
@@ -23,8 +22,8 @@ export default eventHandler(async (event) => {
     totalStars: repos.reduce((acc, repo) => acc + repo.stars, 0)
   }
 
-  return apiResponse(event, {
+  return {
     stats,
     repos
-  })
+  }
 })
