@@ -5,7 +5,7 @@ export function apiResponse (event: H3Event, resp: any) {
     ...resp,
     meta: {
       generatedAt: new Date().toISOString(),
-      url: event.req.url
+      url: 'https://ungh.unjs.io' + event.req.url
     }
   }
 }

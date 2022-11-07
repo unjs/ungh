@@ -91,7 +91,7 @@ GitHub organization repositories overview and overall stats.
 
 Get star information for one or more repositories or organizations.
 
-Multiple items can be separated by either `,` or `+` or ` ` (space). Each item can be either `{owner}/{org}` to specify one repository or `{owner}` to specify all organization repositories.
+Multiple items can be separated by either `,` or `+` or ` ` (space). Each item can be either `{owner}/{org}` to specify one repository or `{owner}/*` to specify all organization repositories.
 
 **Example:** https://ungh.unjs.io/gh/stars/nuxt/nuxt.js+nuxt/framework
 

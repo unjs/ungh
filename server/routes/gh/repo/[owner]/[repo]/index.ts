@@ -1,4 +1,5 @@
 import { ghRepo } from '~/utils/github'
+import { apiResponse } from '~/utils/response'
 import type { GithubRepo } from '~types'
 
 export default eventHandler(async (event) => {
@@ -17,7 +18,7 @@ export default eventHandler(async (event) => {
     forks: rawRepo.forks
   }
 
-  return {
+  return apiResponse(event, {
     repo
-  }
+  })
 })
