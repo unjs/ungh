@@ -16,7 +16,7 @@ export const ghFetch = cachedFunction((url: string) => {
     baseURL: 'https://api.github.com',
     headers: {
       'User-Agent': 'fetch',
-      Authorization: 'token ' + runtimeConfig.GITHUB_TOKEN
+      Authorization: 'token ' + runtimeConfig.GH_TOKEN
     }
   })
 }, cacheOptions('api'))

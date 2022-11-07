@@ -20,6 +20,7 @@ jobs:
         run: pnpm build
         env:
           NITRO_PRESET: cloudflare
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
       - name: Publish to cloudflare
         uses: cloudflare/wrangler-action@2.0.0
         with:

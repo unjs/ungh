@@ -2,7 +2,7 @@ import { defineNitroConfig } from 'nitropack'
 
 export default defineNitroConfig({
   runtimeConfig: {
-    GITHUB_TOKEN: process.env.GITHUB_TOKEN
+    GH_TOKEN: process.env.GH_TOKEN
   },
   storage: {
     '/cache/gh': {
