@@ -2,6 +2,7 @@ name = "ungh"
 main = "server/.output/server/index.mjs"
 workers_dev = true
 compatibility_date = "2022-09-10"
+account_id = "8ea39dfb7bb411de7fcff5444d7a5dbb"
 
 [site]
 bucket = "server/.output/public"
