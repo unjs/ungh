@@ -68,6 +68,28 @@ Get repository contributors.
 }
 ```
 
+### `/repo/{owner}/{name}/files/{branch}`
+
+Get repository files tree on specific branch.
+
+**Example:** https://ungh.unjs.io/repo/unjs/h3/files/main
+
+```json
+{
+  "meta": {
+    "sha": "501f0c6e623ea827d47691046f3c7319f5ac4651"
+  },
+  "files": [
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "sha": "4c2b9ce4bccd6e046cd71be1a8c5e53a62778858",
+      "size": 5782
+    }
+  ]
+}
+```
+
 ### `/org/{owner}`
 
 GitHub organization information.

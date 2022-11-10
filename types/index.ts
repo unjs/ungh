@@ -22,3 +22,10 @@ export interface GithubContributor {
   username: string
   contributions: number
 }
+
+export interface GithubFile {
+  path: string,
+  mode: string,
+  sha: string,
+  size: number
+}

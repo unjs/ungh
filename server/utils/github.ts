@@ -27,4 +27,8 @@ export const ghRepo = cachedFunction((repo: string) => {
 
 export const ghRepoContributors = cachedFunction((repo: string) => {
   return ghFetch(`/repos/${repo}/contributors`)
-}, cacheOptions('repoContributors'))
+}, cacheOptions('contributors'))
+
+export const ghRepoFiles = cachedFunction((repo: string, ref: string) => {
+  return ghFetch(`/repos/${repo}/git/trees/${ref}?recursive=1`)
+}, cacheOptions('files'))
