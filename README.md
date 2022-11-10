@@ -128,7 +128,7 @@ Get repository releases.
 }
 ```
 
-### `/repo/{owner}/{name}/release`
+### `/repo/{owner}/{name}/releases/latest`
 
 Get latest repository release.
 
