@@ -15,5 +15,8 @@
     "eslint": "^8.27.0",
     "typescript": "^4.8.4"
   },
-  "packageManager": "pnpm@7.13.4"
+  "packageManager": "pnpm@7.13.4",
+  "dependencies": {
+    "corepack": "^0.15.1"
+  }
 }

@@ -6,8 +6,11 @@ importers:
     specifiers:
       '@nuxtjs/eslint-config-typescript': ^11.0.0
       changelogen: ^0.3.5
+      corepack: ^0.15.1
       eslint: ^8.27.0
       typescript: ^4.8.4
+    dependencies:
+      corepack: 0.15.1
     devDependencies:
       '@nuxtjs/eslint-config-typescript': 11.0.0_rmayb2veg2btbq6mbmnyivgasy
       changelogen: 0.3.5
@@ -955,6 +958,11 @@ packages:
   /core-util-is/1.0.3:
     resolution: {integrity: sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==}
     dev: true
+
+  /corepack/0.15.1:
+    resolution: {integrity: sha512-zDNJiFUauOtpfuk8DoOrCsxrFkC/zywpdaIMwN3AcJAuLzs9P9S3T3ksYLoJnMAuAZqvwMisjafvzdZd3dil2g==}
+    hasBin: true
+    dev: false
 
   /crc-32/1.2.2:
     resolution: {integrity: sha512-ROmzCKrTnOwybPcJApAA6WBWij23HVfGVNKqqrZpuyZOHqK2CwHSvpGuyt/UNNvaIjEd8X5IFGp4Mh+Ie1IHJQ==}

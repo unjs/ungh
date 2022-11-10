@@ -3,6 +3,12 @@ import type { GithubRepo } from '~types'
 
 export default eventHandler(async (event) => {
   const rawRepo = await ghRepo(`${event.context.params.owner}/${event.context.params.repo}`)
+  const releaseObj = await ghRepo(`${event.context.params.owner}/${event.context.params.repo}/releases/latest`)
+
+  rawRepo.release = {
+    id: releaseObj.id,
+    tag: releaseObj.tag_name
+  }
 
   const repo = <GithubRepo> {
     id: rawRepo.id,
@@ -14,7 +20,8 @@ export default eventHandler(async (event) => {
     pushedAt: rawRepo.pushed_at,
     stars: rawRepo.stargazers_count,
     watchers: rawRepo.watchers,
-    forks: rawRepo.forks
+    forks: rawRepo.forks,
+    release: rawRepo.release
   }
 
   return {
