@@ -90,6 +90,19 @@ Get repository files tree on specific branch.
 }
 ```
 
+### `/repo/{owner}/{name}/readme`
+
+Get repository readme file on main branch (not cached)
+
+**Example:** https://ungh.unjs.io/repo/unjs/h3/readme
+
+```json
+{
+  "html": "<p><a href=\"https://npmjs.com/package/h3\" rel=\"nofollow\"><img...",
+  "markdown": "[![npm downloads](https://img.shields.io...."
+}
+```
+
 ### `/org/{owner}`
 
 GitHub organization information.

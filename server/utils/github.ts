@@ -1,4 +1,5 @@
 import type { CacheOptions } from 'nitropack'
+import type { FetchOptions } from 'ohmyfetch'
 
 const runtimeConfig = useRuntimeConfig()
 
@@ -11,12 +12,14 @@ const commonCacheOptions: CacheOptions = {
 
 const cacheOptions = (name: string): CacheOptions => ({ ...commonCacheOptions, name })
 
-export const ghFetch = cachedFunction((url: string) => {
+export const ghFetch = cachedFunction((url: string, opts: FetchOptions) => {
   return $fetch(url, {
     baseURL: 'https://api.github.com',
+    ...opts,
     headers: {
       'User-Agent': 'fetch',
-      Authorization: 'token ' + runtimeConfig.GH_TOKEN
+      Authorization: 'token ' + runtimeConfig.GH_TOKEN,
+      ...opts.headers
     }
   })
 }, cacheOptions('api'))
