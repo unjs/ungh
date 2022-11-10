@@ -42,6 +42,92 @@ GitHub repository information.
 }
 ```
 
+### `/repo/{owner}/{name}/contributors`
+
+Get repository contributors.
+
+**Example:** https://ungh.unjs.io/repo/unjs/h3/contributors
+
+```json
+{
+  "stats": {
+    "count": 28
+  },
+  "contributors": [
+    {
+      "id": 5158436,
+      "username": "pi0",
+      "contributions": 243
+    },
+    {
+      "id": 29139614,
+      "username": "renovate[bot]",
+      "contributions": 41
+    }
+  ]
+}
+```
+
+### `/repo/{owner}/{name}/files/{branch}`
+
+Get repository files tree on specific branch.
+
+**Example:** https://ungh.unjs.io/repo/unjs/h3/files/main
+
+```json
+{
+  "meta": {
+    "sha": "501f0c6e623ea827d47691046f3c7319f5ac4651"
+  },
+  "files": [
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "sha": "4c2b9ce4bccd6e046cd71be1a8c5e53a62778858",
+      "size": 5782
+    }
+  ]
+}
+```
+
+### `/repo/{owner}/{name}/readme`
+
+Get repository readme file on main branch (not cached)
+
+**Example:** https://ungh.unjs.io/repo/unjs/h3/readme
+
+```json
+{
+  "html": "<p><a href=\"https://npmjs.com/package/h3\" rel=\"nofollow\"><img...",
+  "markdown": "[![npm downloads](https://img.shields.io...."
+}
+```
+
+### `/repo/{owner}/{name}/releases`
+
+Get repository releases.
+
+**Example:** https://ungh.unjs.io/repo/nuxt/framework/releases
+
+```json
+{
+  "releases": [
+    {
+      "id": 82066265,
+      "tag": "v3.0.0-rc.13",
+      "author": "pi0",
+      "name": "v3.0.0-rc.13",
+      "draft": false,
+      "prerelease": false,
+      "createdAt": "2022-11-04T11:37:49Z",
+      "publishedAt": "2022-11-04T11:41:59Z",
+      "markdown": "....",
+      "html": "..."
+    }
+  ]
+}
+```
+
 ### `/org/{owner}`
 
 GitHub organization information.
