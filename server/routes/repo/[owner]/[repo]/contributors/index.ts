@@ -2,11 +2,18 @@ import { ghRepoContributors } from '~/utils/github'
 import type { GithubContributor } from '~types'
 
 export default eventHandler(async (event) => {
-  const contributors = <GithubContributor[]> await ghRepoContributors(`${event.context.params.owner}/${event.context.params.repo}`)
+  const res = await ghRepoContributors(`${event.context.params.owner}/${event.context.params.repo}`)
 
-  const totalContributors = contributors.length || 0
+  const contributors = res.map(i => (<GithubContributor>{
+    id: i.id,
+    username: i.login,
+    contributions: i.contributions || 0
+  }))
+
   return {
-    totalContributors,
+    stats: {
+      count: contributors.length
+    },
     contributors
   }
 })
