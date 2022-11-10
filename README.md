@@ -128,6 +128,29 @@ Get repository releases.
 }
 ```
 
+### `/repo/{owner}/{name}/releases/latest`
+
+Get latest repository release.
+
+**Example:** https://ungh.unjs.io/repo/nuxt/framework/releases/latest
+
+```json
+{
+  "release": {
+    "id": 82066265,
+    "tag": "v3.0.0-rc.13",
+    "author": "pi0",
+    "name": "v3.0.0-rc.13",
+    "draft": false,
+    "prerelease": false,
+    "createdAt": "2022-11-04T11:37:49Z",
+    "publishedAt": "2022-11-04T11:41:59Z",
+    "markdown": "....",
+    "html": "..."
+  }
+}
+```
+
 ### `/org/{owner}`
 
 GitHub organization information.

@@ -40,4 +40,5 @@ export interface GithubRelease {
   createdAt: string
   publishedAt: string
   markdown: string
+  html: string
 }

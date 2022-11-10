@@ -3,7 +3,7 @@ import type { GithubRelease } from '~types'
 
 export default eventHandler(async (event) => {
   const repo = `${event.context.params.owner}/${event.context.params.repo}`
-  const res = await ghFetch(`/repos/${repo}/releases?2`)
+  const res = await ghFetch(`/repos/${repo}/releases`)
 
   const releases = res.map(i => (<GithubRelease>{
     id: i.id,
