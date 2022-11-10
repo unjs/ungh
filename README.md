@@ -207,6 +207,21 @@ Multiple items can be separated by either `,` or `+` or ` ` (space). Each item c
 }
 ```
 
+### `/user/find/{query}`
+
+Find one github user by email or other query.
+
+**Example:** https://ungh.unjs.io/user/find/pooya@pi0.io
+
+```json
+{
+  "user": {
+    "id": 5158436,
+    "username": "pi0"
+  }
+}
+```
+
 ## 💻 Development
 
 - Clone this repository

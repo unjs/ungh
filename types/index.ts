@@ -17,6 +17,11 @@ export interface GithubOrg {
   description: string
 }
 
+export interface GithubUser {
+  id: string
+  username: string
+}
+
 export interface GithubContributor {
   id: string
   username: string
