@@ -35,3 +35,17 @@ export const ghRepoContributors = cachedFunction((repo: string) => {
 export const ghRepoFiles = cachedFunction((repo: string, ref: string) => {
   return ghFetch(`/repos/${repo}/git/trees/${ref}?recursive=1`)
 }, cacheOptions('files'))
+
+export const ghMarkdown = cachedFunction((markdown: string, repo: string) => {
+  return ghFetch('/markdown', {
+    method: 'POST',
+    headers: {
+      accept: 'application/vnd.github+json',
+      'content-type': 'text/x-markdown'
+    },
+    body: JSON.stringify({
+      text: markdown,
+      context: repo
+    })
+  })
+}, cacheOptions('markdown'))

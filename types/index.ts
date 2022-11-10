@@ -29,3 +29,15 @@ export interface GithubFile {
   sha: string,
   size: number
 }
+
+export interface GithubRelease {
+  id: number
+  tag: string
+  author: string
+  name: string
+  draft: boolean
+  prerelease: boolean
+  createdAt: string
+  publishedAt: string
+  markdown: string
+}

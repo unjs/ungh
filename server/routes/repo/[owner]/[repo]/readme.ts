@@ -1,19 +1,9 @@
-import { ghFetch } from '~/utils/github'
+import { ghMarkdown } from '~/utils/github'
 
 export default cachedEventHandler(async (event) => {
   const repo = `${event.context.params.owner}/${event.context.params.repo}`
   const markdown = await $fetch(`https://raw.githubusercontent.com/${repo}/main/README.md`)
-  const html = await ghFetch('/markdown', {
-    method: 'POST',
-    headers: {
-      accept: 'application/vnd.github+json',
-      'content-type': 'text/x-markdown'
-    },
-    body: JSON.stringify({
-      text: markdown,
-      context: repo
-    })
-  })
+  const html = await ghMarkdown(markdown, repo)
   return {
     html,
     markdown
