@@ -50,9 +50,6 @@ Get repository contributors.
 
 ```json
 {
-  "stats": {
-    "count": 28
-  },
   "contributors": [
     {
       "id": 5158436,
@@ -169,16 +166,12 @@ GitHub organization information.
 
 ### `/org/{owner}/repos`
 
-GitHub organization repositories overview and overall stats.
+GitHub organization repositories overview.
 
 **Example:** https://ungh.unjs.io/org/unjs/repos
 
 ```json
 {
-  "stats": {
-    "count": 30,
-    "totalStars": 12708
-  },
   "repos": [
     {
       "id": 97751746,

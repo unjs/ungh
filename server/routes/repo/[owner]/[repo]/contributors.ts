@@ -11,9 +11,6 @@ export default eventHandler(async (event) => {
   }))
 
   return {
-    stats: {
-      count: contributors.length
-    },
     contributors
   }
 })

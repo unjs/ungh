@@ -17,13 +17,7 @@ export default eventHandler(async (event) => {
     forks: rawRepo.forks
   }))
 
-  const stats = {
-    count: repos.length,
-    totalStars: repos.reduce((acc, repo) => acc + repo.stars, 0)
-  }
-
   return {
-    stats,
     repos
   }
 })
