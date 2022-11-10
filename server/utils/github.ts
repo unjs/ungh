@@ -12,7 +12,7 @@ const commonCacheOptions: CacheOptions = {
 
 const cacheOptions = (name: string): CacheOptions => ({ ...commonCacheOptions, name })
 
-export const ghFetch = cachedFunction((url: string, opts: FetchOptions) => {
+export const ghFetch = cachedFunction((url: string, opts: FetchOptions = {}) => {
   return $fetch(url, {
     baseURL: 'https://api.github.com',
     ...opts,
