@@ -11,9 +11,9 @@ UNGH provides a simplified, cached, and anonymous layer to make GitHub API more 
 ## Roadmap
 
 - [x] Hosted MVP service (powered by cloudflare workers and KV)
-- [ ] Publish `ungh` js client to NPM
-- [ ] Implement token pool and open token donations
-- [ ] Implement `/contributors` endpoint
+- [ ] Publish `ungh` js client to NPM ([#4](https://github.com/unjs/ungh/issues/4))
+- [ ] Implement token pool and open token donations ([#5](https://github.com/unjs/ungh/issues/5))
+- [ ] Mark API as stable
 
 **Note:** This project is still under development and API might change.
 
