@@ -24,3 +24,7 @@ export const ghFetch = cachedFunction((url: string) => {
 export const ghRepo = cachedFunction((repo: string) => {
   return ghFetch(`/repos/${repo}`)
 }, cacheOptions('repo'))
+
+export const ghRepoContributors = cachedFunction((repo: string) => {
+  return ghFetch(`/repos/${repo}/contributors`)
+}, cacheOptions('repoContributors'))

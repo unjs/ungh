@@ -42,6 +42,32 @@ GitHub repository information.
 }
 ```
 
+### `/repo/{owner}/{name}/contributors`
+
+Get repository contributors.
+
+**Example:** https://ungh.unjs.io/repo/unjs/h3/contributors
+
+```json
+{
+  "stats": {
+    "count": 28
+  },
+  "contributors": [
+    {
+      "id": 5158436,
+      "username": "pi0",
+      "contributions": 243
+    },
+    {
+      "id": 29139614,
+      "username": "renovate[bot]",
+      "contributions": 41
+    }
+  ]
+}
+```
+
 ### `/org/{owner}`
 
 GitHub organization information.
