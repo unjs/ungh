@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "@nuxtjs/eslint-config-typescript": "^11.0.0",
-    "changelogen": "^0.3.5",
+    "changelogen": "^0.4.0",
     "eslint": "^8.27.0",
     "typescript": "^4.8.4"
   },

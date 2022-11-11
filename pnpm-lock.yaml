@@ -5,12 +5,12 @@ importers:
   .:
     specifiers:
       '@nuxtjs/eslint-config-typescript': ^11.0.0
-      changelogen: ^0.3.5
+      changelogen: ^0.4.0
       eslint: ^8.27.0
       typescript: ^4.8.4
     devDependencies:
       '@nuxtjs/eslint-config-typescript': 11.0.0_rmayb2veg2btbq6mbmnyivgasy
-      changelogen: 0.3.5
+      changelogen: 0.4.0
       eslint: 8.27.0
       typescript: 4.8.4
 
@@ -812,8 +812,8 @@ packages:
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
     dev: true
 
-  /changelogen/0.3.5:
-    resolution: {integrity: sha512-WK+tUhVtIhuFJU5kkUZhnM+M+cVCGgJc1zCENqd55jdlZl6fg4CYjTC/QiH31EehoKA3XjXu7Npi2g4hwGTbzg==}
+  /changelogen/0.4.0:
+    resolution: {integrity: sha512-GtNYojFz6sqXLesOqTG4G9rKGQ3ehyFnYuCBIUXlencCa6xVP/ZU4zOXS467/UoBm9robSJL+5YQzsbWGAxqcg==}
     hasBin: true
     dependencies:
       c12: 0.2.13
@@ -821,6 +821,7 @@ packages:
       convert-gitmoji: 0.1.3
       execa: 6.1.0
       mri: 1.2.0
+      node-fetch-native: 0.1.8
       pkg-types: 0.3.6
       scule: 0.3.2
       semver: 7.3.8
