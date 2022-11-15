@@ -87,6 +87,24 @@ Get repository files tree on specific branch.
 }
 ```
 
+### `/repo/{owner}/{name}/files/{branch}/{...path}`
+
+Get file contents from a repository. If path ends with `.md`, an additional `html` field with rendered markup will be appended.
+
+**Example:** https://ungh.unjs.io/repo/unjs/h3/files/main/README.md
+
+```json
+{
+  "meta": {
+    "url": "https://raw.githubusercontent.com/unjs/h3/main/README.md"
+  },
+  "file": {
+    "contents": "...",
+    "html": "..."
+  }
+}
+```
+
 ### `/repo/{owner}/{name}/readme`
 
 Get repository readme file on main branch (not cached)

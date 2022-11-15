@@ -47,3 +47,8 @@ export interface GithubRelease {
   markdown: string
   html: string
 }
+
+export interface GithubFileData {
+  contents: string
+  html?: string
+}
