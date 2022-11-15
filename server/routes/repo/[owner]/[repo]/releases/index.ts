@@ -19,7 +19,7 @@ export default eventHandler(async (event) => {
   }))
 
   await Promise.all(releases.map(async (release) => {
-    release.html = await ghMarkdown(release.markdown, repo)
+    release.html = await ghMarkdown(release.markdown, repo, 'release-' + release.tag)
   }))
 
   return {

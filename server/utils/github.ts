@@ -36,7 +36,7 @@ export const ghRepoFiles = cachedFunction((repo: string, ref: string) => {
   return ghFetch(`/repos/${repo}/git/trees/${ref}?recursive=1`)
 }, cacheOptions('files'))
 
-export const ghMarkdown = cachedFunction((markdown: string, repo: string) => {
+export const ghMarkdown = cachedFunction((markdown: string, repo: string, _id: string) => {
   return ghFetch('/markdown', {
     method: 'POST',
     headers: {
@@ -48,4 +48,7 @@ export const ghMarkdown = cachedFunction((markdown: string, repo: string) => {
       context: repo
     })
   })
-}, cacheOptions('markdown'))
+}, {
+  ...cacheOptions('markdown'),
+  getKey: (_markdown, repo, id) => repo + '/' + id
+})

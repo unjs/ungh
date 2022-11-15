@@ -15,7 +15,7 @@ export default eventHandler(async (event) => {
     createdAt: i.created_at,
     publishedAt: i.published_at,
     markdown: i.body,
-    html: await ghMarkdown(i.body, repo)
+    html: await ghMarkdown(i.body, repo, 'release-' + i.tag)
   }
 
   return {
