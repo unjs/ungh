@@ -19,11 +19,11 @@ UNGH provides a simplified, cached, and anonymous layer to make GitHub API more 
 
 ## API
 
-### `/repo/{owner}/{name}`
+### `/repos/{owner}/{name}`
 
 GitHub repository information.
 
-**Example:** https://ungh.unjs.io/repo/unjs/h3
+**Example:** https://ungh.unjs.io/repos/unjs/h3
 
 ```json
 {
@@ -42,11 +42,11 @@ GitHub repository information.
 }
 ```
 
-### `/repo/{owner}/{name}/contributors`
+### `/repos/{owner}/{name}/contributors`
 
 Get repository contributors.
 
-**Example:** https://ungh.unjs.io/repo/unjs/h3/contributors
+**Example:** https://ungh.unjs.io/repos/unjs/h3/contributors
 
 ```json
 {
@@ -65,11 +65,11 @@ Get repository contributors.
 }
 ```
 
-### `/repo/{owner}/{name}/files/{branch}`
+### `/repos/{owner}/{name}/files/{branch}`
 
 Get repository files tree on specific branch.
 
-**Example:** https://ungh.unjs.io/repo/unjs/h3/files/main
+**Example:** https://ungh.unjs.io/repos/unjs/h3/files/main
 
 ```json
 {
@@ -87,11 +87,11 @@ Get repository files tree on specific branch.
 }
 ```
 
-### `/repo/{owner}/{name}/files/{branch}/{...path}`
+### `/repos/{owner}/{name}/files/{branch}/{...path}`
 
 Get file contents from a repository. If path ends with `.md`, an additional `html` field with rendered markup will be appended.
 
-**Example:** https://ungh.unjs.io/repo/unjs/h3/files/main/README.md
+**Example:** https://ungh.unjs.io/repos/unjs/h3/files/main/README.md
 
 ```json
 {
@@ -105,11 +105,11 @@ Get file contents from a repository. If path ends with `.md`, an additional `htm
 }
 ```
 
-### `/repo/{owner}/{name}/readme`
+### `/repos/{owner}/{name}/readme`
 
 Get repository readme file on main branch (not cached)
 
-**Example:** https://ungh.unjs.io/repo/unjs/h3/readme
+**Example:** https://ungh.unjs.io/repos/unjs/h3/readme
 
 ```json
 {
@@ -118,11 +118,11 @@ Get repository readme file on main branch (not cached)
 }
 ```
 
-### `/repo/{owner}/{name}/releases`
+### `/repos/{owner}/{name}/releases`
 
 Get repository releases.
 
-**Example:** https://ungh.unjs.io/repo/nuxt/framework/releases
+**Example:** https://ungh.unjs.io/repos/nuxt/framework/releases
 
 ```json
 {
@@ -143,11 +143,11 @@ Get repository releases.
 }
 ```
 
-### `/repo/{owner}/{name}/releases/latest`
+### `/repos/{owner}/{name}/releases/latest`
 
 Get latest repository release.
 
-**Example:** https://ungh.unjs.io/repo/nuxt/framework/releases/latest
+**Example:** https://ungh.unjs.io/repos/nuxt/framework/releases/latest
 
 ```json
 {
@@ -166,11 +166,11 @@ Get latest repository release.
 }
 ```
 
-### `/org/{owner}`
+### `/orgs/{owner}`
 
 GitHub organization information.
 
-**Example:** https://ungh.unjs.io/org/unjs
+**Example:** https://ungh.unjs.io/orgs/unjs
 
 ```json
 {
@@ -182,11 +182,11 @@ GitHub organization information.
 }
 ```
 
-### `/org/{owner}/repos`
+### `/orgs/{owner}/repos`
 
 GitHub organization repositories overview.
 
-**Example:** https://ungh.unjs.io/org/unjs/repos
+**Example:** https://ungh.unjs.io/orgs/unjs/repos
 
 ```json
 {
@@ -225,11 +225,11 @@ Multiple items can be separated by either `,` or `+` or ` ` (space). Each item c
 }
 ```
 
-### `/user/find/{query}`
+### `/users/find/{query}`
 
 Find one github user by email or other query.
 
-**Example:** https://ungh.unjs.io/user/find/pooya@pi0.io
+**Example:** https://ungh.unjs.io/users/find/pooya@pi0.io
 
 ```json
 {
