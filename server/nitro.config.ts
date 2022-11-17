@@ -5,7 +5,7 @@ export default defineNitroConfig({
     GH_TOKEN: process.env.GH_TOKEN
   },
   routeRules: {
-    '/gh/**': { cache: { maxAge: 60 } }
+    '/**': { cache: { maxAge: 60 }, cors: true }
   },
   storage: {
     '/cache/gh': {
