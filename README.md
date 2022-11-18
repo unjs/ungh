@@ -163,7 +163,52 @@ GitHub organization information.
     "id": 80154025,
     "name": "unjs",
     "description": "Unified JavaScript Tools"
-  },
+  }
+}
+```
+
+### `repo/{owner}/{name}/{branches}`
+
+Get all Branches from the Repository.
+
+**Example:** https://ungh.unjs.io/repo/unjs/ungh/branches
+
+```json
+{
+  "branches": [
+    {
+      "name": "main",
+      "commit": {
+        "sha": "5928801a9a854f7c69c1a672bb874b8216f14138",
+        "url": "https://api.github.com/repos/unjs/ungh/commits/5928801a9a854f7c69c1a672bb874b8216f14138"
+      },
+      "protected": true
+    },
+    {
+      "name": "renovate/all-minor-patch",
+      "commit": {
+        "sha": "9a7fcfae8e8ea0b4ca2330a42b185d06dcafdbfc",
+        "url": "https://api.github.com/repos/unjs/ungh/commits/9a7fcfae8e8ea0b4ca2330a42b185d06dcafdbfc"
+      },
+      "protected": false
+    },
+    {
+      "name": "renovate/nitropack-1.x",
+      "commit": {
+        "sha": "d680759edb499f89f007f3d0b194d3340ded537a",
+        "url": "https://api.github.com/repos/unjs/ungh/commits/d680759edb499f89f007f3d0b194d3340ded537a"
+      },
+      "protected": false
+    },
+    {
+      "name": "renovate/nuxtjs-eslint-config-typescript-12.x",
+      "commit": {
+        "sha": "b81e42ba0fb06bc7f907145e962a79d26eb3d19e",
+        "url": "https://api.github.com/repos/unjs/ungh/commits/b81e42ba0fb06bc7f907145e962a79d26eb3d19e"
+      },
+      "protected": false
+    }
+  ]
 }
 ```
 
