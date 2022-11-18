@@ -30,6 +30,12 @@ export interface GithubFile {
   size: number
 }
 
+export interface GithubBranches {
+  name: string,
+  commit: string,
+  protected: boolean
+}
+
 export interface GithubRelease {
   id: number
   tag: string
