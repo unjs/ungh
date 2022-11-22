@@ -23,7 +23,7 @@ UNGH provides a simplified, cached, and anonymous layer to make GitHub API more 
 
 GitHub repository information.
 
-**Example:** https://ungh.unjs.io/repos/unjs/h3
+**Example:** https://ungh.cc/repos/unjs/h3
 
 ```json
 {
@@ -46,7 +46,7 @@ GitHub repository information.
 
 Get repository contributors.
 
-**Example:** https://ungh.unjs.io/repos/unjs/h3/contributors
+**Example:** https://ungh.cc/repos/unjs/h3/contributors
 
 ```json
 {
@@ -69,7 +69,7 @@ Get repository contributors.
 
 Get repository files tree on specific branch.
 
-**Example:** https://ungh.unjs.io/repos/unjs/h3/files/main
+**Example:** https://ungh.cc/repos/unjs/h3/files/main
 
 ```json
 {
@@ -91,7 +91,7 @@ Get repository files tree on specific branch.
 
 Get file contents from a repository. If path ends with `.md`, an additional `html` field with rendered markup will be appended.
 
-**Example:** https://ungh.unjs.io/repos/unjs/h3/files/main/README.md
+**Example:** https://ungh.cc/repos/unjs/h3/files/main/README.md
 
 ```json
 {
@@ -109,7 +109,7 @@ Get file contents from a repository. If path ends with `.md`, an additional `htm
 
 Get repository readme file on main branch (not cached)
 
-**Example:** https://ungh.unjs.io/repos/unjs/h3/readme
+**Example:** https://ungh.cc/repos/unjs/h3/readme
 
 ```json
 {
@@ -122,7 +122,7 @@ Get repository readme file on main branch (not cached)
 
 Get repository releases.
 
-**Example:** https://ungh.unjs.io/repos/nuxt/framework/releases
+**Example:** https://ungh.cc/repos/nuxt/framework/releases
 
 ```json
 {
@@ -147,7 +147,7 @@ Get repository releases.
 
 Get latest repository release.
 
-**Example:** https://ungh.unjs.io/repos/nuxt/framework/releases/latest
+**Example:** https://ungh.cc/repos/nuxt/framework/releases/latest
 
 ```json
 {
@@ -170,7 +170,7 @@ Get latest repository release.
 
 GitHub organization information.
 
-**Example:** https://ungh.unjs.io/orgs/unjs
+**Example:** https://ungh.cc/orgs/unjs
 
 ```json
 {
@@ -178,7 +178,7 @@ GitHub organization information.
     "id": 80154025,
     "name": "unjs",
     "description": "Unified JavaScript Tools"
-  },
+  }
 }
 ```
 
@@ -186,7 +186,7 @@ GitHub organization information.
 
 GitHub organization repositories overview.
 
-**Example:** https://ungh.unjs.io/orgs/unjs/repos
+**Example:** https://ungh.cc/orgs/unjs/repos
 
 ```json
 {
@@ -213,7 +213,7 @@ Get star information for one or more repositories or organizations.
 
 Multiple items can be separated by either `,` or `+` or ` ` (space). Each item can be either `{owner}/{org}` to specify one repository or `{owner}/*` to specify all organization repositories.
 
-**Example:** https://ungh.unjs.io/stars/nuxt/nuxt.js+nuxt/framework
+**Example:** https://ungh.cc/stars/nuxt/nuxt.js+nuxt/framework
 
 ```json
 {
@@ -229,7 +229,7 @@ Multiple items can be separated by either `,` or `+` or ` ` (space). Each item c
 
 Find one github user by email or other query.
 
-**Example:** https://ungh.unjs.io/users/find/pooya@pi0.io
+**Example:** https://ungh.cc/users/find/pooya@pi0.io
 
 ```json
 {
