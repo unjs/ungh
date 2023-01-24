@@ -35,6 +35,17 @@ export interface GithubFile {
   size: number
 }
 
+export interface GithubCommit {
+  sha: string
+  parents?: GithubCommit[]
+  stats?: {
+    total?: number
+    additions?: number
+    deletions?: number
+  };
+  files?: GithubFile[]
+}
+
 export interface GithubRelease {
   id: number
   tag: string

@@ -42,6 +42,61 @@ GitHub repository information.
 }
 ```
 
+### `/repos/{owner}/{name}/commits`
+
+Get repository commits.
+
+**Example:** https://ungh.cc/repos/unjs/h3/commits
+
+```json
+{
+  "commits": [
+    {
+      "sha": "89171d6d688f432e137fbcb69de10a0bbbd21110",
+      "parents": [
+        {
+          "sha": "7ec7e53f41481188a7b3e2e2fa996a09306ddd29",
+          "url": "https://api.github.com/repos/unjs/h3/commits/7ec7e53f41481188a7b3e2e2fa996a09306ddd29",
+          "html_url": "https://github.com/unjs/h3/commit/7ec7e53f41481188a7b3e2e2fa996a09306ddd29"
+        }
+      ]
+    }
+  ]
+}
+```
+
+### `/repos/{owner}/{name}/commits/{ref}`
+
+Get commit.
+
+**Example:** https://ungh.cc/repos/unjs/h3/commits/89171d6d688f432e137fbcb69de10a0bbbd21110
+
+```json
+{
+  "commit": {
+    "sha": "89171d6d688f432e137fbcb69de10a0bbbd21110",
+    "parents": [
+      {
+        "sha": "7ec7e53f41481188a7b3e2e2fa996a09306ddd29",
+        "url": "https://api.github.com/repos/unjs/h3/commits/7ec7e53f41481188a7b3e2e2fa996a09306ddd29",
+        "html_url": "https://github.com/unjs/h3/commit/7ec7e53f41481188a7b3e2e2fa996a09306ddd29"
+      }
+    ],
+    "stats": {
+      "total": 178,
+      "additions": 89,
+      "deletions": 89
+    },
+    "files": [
+      {
+        "sha": "140c2e8bce546c2eae206d8d87b9a0fa3c289651",
+        "path": "package.json"
+      }
+    ]
+  }
+}
+```
+
 ### `/repos/{owner}/{name}/contributors`
 
 Get repository contributors.

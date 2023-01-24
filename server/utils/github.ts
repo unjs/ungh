@@ -32,6 +32,14 @@ export const ghRepoContributors = cachedFunction((repo: string) => {
   return ghFetch(`/repos/${repo}/contributors`)
 }, cacheOptions('contributors'))
 
+export const ghRepoCommits = cachedFunction((repo: string) => {
+  return ghFetch(`/repos/${repo}/commits`)
+}, cacheOptions('commits'))
+
+export const ghRepoCommit = cachedFunction((repo: string, ref: string) => {
+  return ghFetch(`/repos/${repo}/commits/${ref}`)
+}, cacheOptions('commit'))
+
 export const ghRepoFiles = cachedFunction((repo: string, ref: string) => {
   return ghFetch(`/repos/${repo}/git/trees/${ref}?recursive=1`)
 }, cacheOptions('files'))
