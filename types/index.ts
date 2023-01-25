@@ -52,3 +52,29 @@ export interface GithubFileData {
   contents: string
   html?: string
 }
+
+export interface GithubLabel {
+  id: number
+  node_id: string
+  url: string
+  name: string
+  color: string
+  default: boolean
+  description: string
+}
+
+export interface GithubIssue {
+  id: number
+  node_id: string
+  number: number
+  title: string
+  user: GithubUser
+  labels: GithubLabel[]
+  state: string
+  locked: boolean
+  comments: number
+  created_at: string
+  updated_at: string
+  closed_at: string
+  body: string
+}

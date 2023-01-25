@@ -240,6 +240,76 @@ Find one github user by email or other query.
 }
 ```
 
+### `/repos/{owner}/{name}/labels`
+
+Get repository labels.
+
+**Example:** https://ungh.cc/repos/unjs/h3/labels
+
+```json
+{
+  "labels": [
+    {
+      "id": 2512662026,
+      "node_id": "MDU6TGFiZWwyNTEyNjYyMDI2",
+      "url": "https://api.github.com/repos/unjs/h3/labels/bug",
+      "name": "bug",
+      "color": "d73a4a",
+      "default": true,
+      "description": "Something isn't working"
+    }
+  ]
+}
+```
+
+### `/repos/{owner}/{name}/issues`
+
+Get repository issues.
+
+**Example:** https://ungh.cc/repos/unjs/h3/issues
+
+```json
+{
+  "issues": [
+    {
+      "id": 1555953226,
+      "node_id": "PR_kwDOErHI985Ieid3",
+      "number": 307,
+      "title": "chore(deps): update all non-major dependencies",
+      "labels": [],
+      "state": "open",
+      "locked": false,
+      "comments": 1,
+      "created_at": "2023-01-25T02:10:07Z",
+      "updated_at": "2023-01-25T15:14:39Z"
+    }
+  ]
+}
+```
+
+### `/repos/{owner}/{name}/issue/{number}`
+
+Get an issue
+
+**Example:** https://ungh.cc/repos/unjs/h3/issues/307
+
+```json
+{
+  "issue": {
+    "id": 1555953226,
+    "node_id": "PR_kwDOErHI985Ieid3",
+    "number": 307,
+    "title": "chore(deps): update all non-major dependencies",
+    "labels": [],
+    "state": "open",
+    "locked": false,
+    "comments": 1,
+    "created_at": "2023-01-25T02:10:07Z",
+    "updated_at": "2023-01-25T15:14:39Z"
+  }
+}
+```
+
 ## 💻 Development
 
 - Clone this repository

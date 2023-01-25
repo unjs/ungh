@@ -52,3 +52,15 @@ export const ghMarkdown = cachedFunction((markdown: string, repo: string, _id: s
   ...cacheOptions('markdown'),
   getKey: (_markdown, repo, id) => repo + '/' + id
 })
+
+export const ghRepoLabels = cachedFunction((repo: string) => {
+  return ghFetch(`/repos/${repo}/labels`)
+}, cacheOptions('labels'))
+
+export const ghRepoIssues = cachedFunction((repo: string) => {
+  return ghFetch(`/repos/${repo}/issues`)
+}, cacheOptions('issues'))
+
+export const ghRepoIssue = cachedFunction((repo: string, id: string) => {
+  return ghFetch(`/repos/${repo}/issues/${id}`)
+}, cacheOptions('issue'))
