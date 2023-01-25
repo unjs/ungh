@@ -57,6 +57,10 @@ export const ghRepoLabels = cachedFunction((repo: string) => {
   return ghFetch(`/repos/${repo}/labels`)
 }, cacheOptions('labels'))
 
+export const ghRepoLabel = cachedFunction((repo: string, name: string) => {
+  return ghFetch(`/repos/${repo}/labels/${name}`)
+}, cacheOptions('label'))
+
 export const ghRepoIssues = cachedFunction((repo: string) => {
   return ghFetch(`/repos/${repo}/issues`)
 }, cacheOptions('issues'))

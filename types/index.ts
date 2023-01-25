@@ -55,8 +55,6 @@ export interface GithubFileData {
 
 export interface GithubLabel {
   id: number
-  node_id: string
-  url: string
   name: string
   color: string
   default: boolean
@@ -64,17 +62,15 @@ export interface GithubLabel {
 }
 
 export interface GithubIssue {
-  id: number
-  node_id: string
   number: number
   title: string
-  user: GithubUser
-  labels: GithubLabel[]
-  state: string
+  user: GithubUser['username']
+  labels: GithubLabel['name'][]
+  state: 'open' | 'closed'
   locked: boolean
-  comments: number
-  created_at: string
-  updated_at: string
-  closed_at: string
+  commentsCount: number
+  createdAt: string
+  updatedAt: string
+  closedAt: string
   body: string
 }

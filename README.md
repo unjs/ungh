@@ -240,7 +240,7 @@ Find one github user by email or other query.
 }
 ```
 
-### `/repos/{owner}/{name}/labels`
+### `/repos/{owner}/{repo}/labels`
 
 Get repository labels.
 
@@ -251,8 +251,6 @@ Get repository labels.
   "labels": [
     {
       "id": 2512662026,
-      "node_id": "MDU6TGFiZWwyNTEyNjYyMDI2",
-      "url": "https://api.github.com/repos/unjs/h3/labels/bug",
       "name": "bug",
       "color": "d73a4a",
       "default": true,
@@ -262,7 +260,25 @@ Get repository labels.
 }
 ```
 
-### `/repos/{owner}/{name}/issues`
+### `/repos/{owner}/{repo}/labels/${name}`
+
+Get a label.
+
+**Example:** https://ungh.cc/repos/unjs/h3/labels/bug
+
+```json
+{
+  "label": {
+    "id": 2512662026,
+    "name": "bug",
+    "color": "d73a4a",
+    "default": true,
+    "description": "Something isn't working"
+  }
+}
+```
+
+### `/repos/{owner}/{repo}/issues`
 
 Get repository issues.
 
@@ -272,22 +288,23 @@ Get repository issues.
 {
   "issues": [
     {
-      "id": 1555953226,
-      "node_id": "PR_kwDOErHI985Ieid3",
       "number": 307,
       "title": "chore(deps): update all non-major dependencies",
+      "user": "renovate[bot]",
       "labels": [],
       "state": "open",
       "locked": false,
-      "comments": 1,
-      "created_at": "2023-01-25T02:10:07Z",
-      "updated_at": "2023-01-25T15:14:39Z"
+      "commentsCount": 1,
+      "createdAt": "2023-01-25T02:10:07Z",
+      "updatedAt": "2023-01-25T15:14:39Z",
+      "closedAt": null,
+      "body": ".."
     }
   ]
 }
 ```
 
-### `/repos/{owner}/{name}/issue/{number}`
+### `/repos/{owner}/{repo}/issue/{number}`
 
 Get an issue
 
@@ -296,16 +313,17 @@ Get an issue
 ```json
 {
   "issue": {
-    "id": 1555953226,
-    "node_id": "PR_kwDOErHI985Ieid3",
     "number": 307,
     "title": "chore(deps): update all non-major dependencies",
+    "user": "renovate[bot]",
     "labels": [],
     "state": "open",
     "locked": false,
-    "comments": 1,
-    "created_at": "2023-01-25T02:10:07Z",
-    "updated_at": "2023-01-25T15:14:39Z"
+    "commentsCount": 1,
+    "createdAt": "2023-01-25T02:10:07Z",
+    "updatedAt": "2023-01-25T15:14:39Z",
+    "closedAt": null,
+    "body": ".."
   }
 }
 ```
