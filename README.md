@@ -54,12 +54,9 @@ Get repository commits.
     {
       "sha": "89171d6d688f432e137fbcb69de10a0bbbd21110",
       "parents": [
-        {
-          "sha": "7ec7e53f41481188a7b3e2e2fa996a09306ddd29",
-          "url": "https://api.github.com/repos/unjs/h3/commits/7ec7e53f41481188a7b3e2e2fa996a09306ddd29",
-          "html_url": "https://github.com/unjs/h3/commit/7ec7e53f41481188a7b3e2e2fa996a09306ddd29"
-        }
-      ]
+        "7ec7e53f41481188a7b3e2e2fa996a09306ddd29"
+      ],
+      "files": []
     }
   ]
 }
@@ -76,11 +73,7 @@ Get commit.
   "commit": {
     "sha": "89171d6d688f432e137fbcb69de10a0bbbd21110",
     "parents": [
-      {
-        "sha": "7ec7e53f41481188a7b3e2e2fa996a09306ddd29",
-        "url": "https://api.github.com/repos/unjs/h3/commits/7ec7e53f41481188a7b3e2e2fa996a09306ddd29",
-        "html_url": "https://github.com/unjs/h3/commit/7ec7e53f41481188a7b3e2e2fa996a09306ddd29"
-      }
+      "7ec7e53f41481188a7b3e2e2fa996a09306ddd29"
     ],
     "stats": {
       "total": 178,
@@ -88,10 +81,8 @@ Get commit.
       "deletions": 89
     },
     "files": [
-      {
-        "sha": "140c2e8bce546c2eae206d8d87b9a0fa3c289651",
-        "path": "package.json"
-      }
+      "package.json",
+      "pnpm-lock.yaml"
     ]
   }
 }

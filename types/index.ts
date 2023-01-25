@@ -37,13 +37,13 @@ export interface GithubFile {
 
 export interface GithubCommit {
   sha: string
-  parents?: GithubCommit[]
+  parents?: GithubCommit['sha'][]
   stats?: {
     total?: number
     additions?: number
     deletions?: number
   };
-  files?: GithubFile[]
+  files?: GithubFile['path'][]
 }
 
 export interface GithubRelease {
