@@ -1,0 +1,5 @@
+.nuxt
+.output
+.cache
+.temp
+.nitro

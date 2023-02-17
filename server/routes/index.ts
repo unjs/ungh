@@ -1,6 +1,7 @@
-const url = 'https://github.com/unjs/ungh'
+const url = "https://github.com/unjs/ungh";
 
-export default eventHandler(() => `<!DOCTYPE html>
+export default eventHandler(
+  () => `<!DOCTYPE html>
 <html>
 <head>
   <title>🐙 UNGH API</title>
@@ -11,4 +12,5 @@ export default eventHandler(() => `<!DOCTYPE html>
 
   <br>
   Learn more: <a href="${url}">${url}</a>
-`)
+`
+);
