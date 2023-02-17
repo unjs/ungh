@@ -43,7 +43,7 @@ export const ghRepoFiles = cachedFunction((repo: string, ref: string) => {
 }, cacheOptions("files"));
 
 export const ghMarkdown = cachedFunction(
-  (markdown: string, repo: string, _id: string) => {
+  (markdown: string, repo: string /*, _id: string */) => {
     return ghFetch("/markdown", {
       method: "POST",
       headers: {

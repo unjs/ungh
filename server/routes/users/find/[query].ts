@@ -6,7 +6,7 @@ export default eventHandler(async (event) => {
     params: { q: event.context.params.query },
   });
 
-  if (!res.items.length) {
+  if (res.items.length === 0) {
     throw createError({
       statusCode: 404,
       statusMessage: "User Not Found",

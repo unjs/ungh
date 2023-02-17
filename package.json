@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "cd server && pnpm dev",
     "build": "cd server && pnpm build",
-    "lint": "eslint --ext .ts,.js,.mjs,.cjs .",
+    "lint": "eslint --ext .ts,.js,.mjs,.cjs . && prettier -c .",
+    "lint:fix": "eslint --fix --ext .ts,.js,.mjs,.cjs . && prettier -w .",
     "release": "pnpm test && changelogen --release && git push --follow-tags && pnpm publish",
     "test": "pnpm lint"
   },
