@@ -6,6 +6,8 @@ export default defineNitroConfig({
   },
   routeRules: {
     "/**": { cache: { maxAge: 60 }, cors: true },
+    // Backward compatibility for changelogen
+    "/user/find/**": { proxy: "/users/find/**" },
   },
   storage: {
     "/cache/gh": {
