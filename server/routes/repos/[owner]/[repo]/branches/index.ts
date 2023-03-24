@@ -12,9 +12,9 @@ export default eventHandler(async (event) => {
         commit: i.commit,
         protected: i.protected,
         protection: i.protction,
-        protection_url: i.protection_url
+        protection_url: i.protection_url,
       }
-  )
+  );
 
   return { branches };
 });
