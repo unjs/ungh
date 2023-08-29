@@ -5,7 +5,10 @@ export default defineNitroConfig({
     GH_TOKEN: process.env.GH_TOKEN,
   },
   routeRules: {
-    "/**": { cache: { maxAge: 60 }, cors: true },
+    "/**": {
+      cache: process.env.NODE_ENV === "production" ? { maxAge: 60 } : undefined,
+      cors: true,
+    },
     // Backward compatibility for changelogen
     "/user/find/**": { proxy: "/users/find/**" },
   },
