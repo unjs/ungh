@@ -8,7 +8,6 @@ export function resolveMarkdownRelativeLinks(
   content: string,
   cdnBaseURL: string,
 ) {
-  console.log("fixing", content);
   return content.replace(
     MARKDOWN_LINK_RE,
     (match, _, url: string | undefined, url2: string) => {
