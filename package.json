@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prepare": "nitropack prepare",
     "build": "nitropack build",
     "dev": "nitropack dev",
     "lint": "eslint --ext .ts,.js,.mjs,.cjs . && prettier -c .",
