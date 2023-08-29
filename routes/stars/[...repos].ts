@@ -4,8 +4,8 @@ export default eventHandler(async (event) => {
       p = p.trim();
       if (p.endsWith("/*")) {
         const org = p.split("/")[0];
-        const repos = await $fetch(`/orgs/${org}/repos`).then((r) =>
-          r.repos.map((r) => r.repo),
+        const repos = await $fetch<{ repos: any[] }>(`/orgs/${org}/repos`).then(
+          (r) => r.repos.map((r) => r.repo),
         );
         return repos;
       }
