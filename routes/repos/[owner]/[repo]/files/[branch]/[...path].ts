@@ -5,7 +5,7 @@ export default eventHandler(async (event) => {
   const repo = `${event.context.params.owner}/${event.context.params.repo}`;
   const ref = `${event.context.params.branch}/${event.context.params.path}`;
   const url = `https://raw.githubusercontent.com/${repo}/${ref}`;
-  const contents = (await $fetch(url)) as string;
+  const contents = await $fetch<string>(url);
 
   const file: GithubFileData = { contents };
 
