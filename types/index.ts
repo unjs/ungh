@@ -9,6 +9,7 @@ export interface GithubRepo {
   stars: number;
   watchers: number;
   forks: number;
+  defaultBranch: string;
 }
 
 export interface GithubOrg {

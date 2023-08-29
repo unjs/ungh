@@ -37,7 +37,8 @@ GitHub repository information.
     "pushedAt": "2022-11-06T06:48:23Z",
     "stars": 1168,
     "watchers": 1168,
-    "forks": 59
+    "forks": 59,
+    "defaultBranch": "main"
   }
 }
 ```

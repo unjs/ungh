@@ -1,8 +1,11 @@
 export default cachedEventHandler(
   async (event) => {
     const repo = `${event.context.params.owner}/${event.context.params.repo}`;
+    const defaultBranch = await ghRepo(repo).then(
+      (r) => r.default_branch || "main",
+    );
     const markdown = await $fetch<string>(
-      `https://raw.githubusercontent.com/${repo}/main/README.md`,
+      `https://raw.githubusercontent.com/${repo}/${defaultBranch}/README.md`,
     );
     const html = await ghMarkdown(markdown, repo, "readme");
     return {
