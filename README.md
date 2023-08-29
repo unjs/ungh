@@ -166,6 +166,43 @@ Get latest repository release.
 }
 ```
 
+### `/repos/{owner}/{name}/branches`
+
+Get all the branches of a repository
+
+**Example:** https://ungh.cc/repos/unjs/ungh/branches
+
+```json
+{
+  "branches": [
+    {
+      "name": "main",
+      "commit": {
+        "sha": "2eb6bff64caf0d18f082adde7606c4702513870b",
+        "url": "https://api.github.com/repos/unjs/ungh/commits/2eb6bff64caf0d18f082adde7606c4702513870b"
+      },
+      "protected": true
+    },
+    {
+      "name": "renovate/all-minor-patch",
+      "commit": {
+        "sha": "61140d05f66cd6b217f2475ad84e2d251ed7de05",
+        "url": "https://api.github.com/repos/unjs/ungh/commits/61140d05f66cd6b217f2475ad84e2d251ed7de05"
+      },
+      "protected": false
+    },
+    {
+      "name": "renovate/typescript-5.x",
+      "commit": {
+        "sha": "19b23fca2088722bbb41a7238bf8bd5272799718",
+        "url": "https://api.github.com/repos/unjs/ungh/commits/19b23fca2088722bbb41a7238bf8bd5272799718"
+      },
+      "protected": false
+    }
+  ]
+}
+```
+
 ### `/orgs/{owner}`
 
 GitHub organization information.

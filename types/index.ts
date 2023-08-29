@@ -52,3 +52,11 @@ export interface GithubFileData {
   contents: string;
   html?: string;
 }
+
+export interface GitHubBranches {
+  name: string;
+  commit: string;
+  protected: boolean;
+  protection: string;
+  protection_url: string;
+}
