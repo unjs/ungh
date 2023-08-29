@@ -4,7 +4,6 @@ export default eventHandler(async (event) => {
   const rawRepo = await ghRepo(
     `${event.context.params.owner}/${event.context.params.repo}`,
   );
-  console.log(rawRepo);
   const repo = <GithubRepo>{
     id: rawRepo.id,
     name: rawRepo.name,
