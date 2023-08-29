@@ -4,7 +4,7 @@ export default eventHandler(async (event) => {
   const rawRepo = await ghRepo(
     `${event.context.params.owner}/${event.context.params.repo}`,
   );
-
+  console.log(rawRepo);
   const repo = <GithubRepo>{
     id: rawRepo.id,
     name: rawRepo.name,
@@ -14,7 +14,7 @@ export default eventHandler(async (event) => {
     updatedAt: rawRepo.updated_at,
     pushedAt: rawRepo.pushed_at,
     stars: rawRepo.stargazers_count,
-    watchers: rawRepo.watchers,
+    watchers: rawRepo.subscribers_count,
     forks: rawRepo.forks,
     defaultBranch: rawRepo.default_branch,
   };
