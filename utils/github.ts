@@ -1,5 +1,5 @@
 import type { CacheOptions } from "nitropack";
-import type { FetchOptions } from "ohmyfetch";
+import type { FetchOptions } from "ofetch";
 
 const runtimeConfig = useRuntimeConfig();
 
@@ -20,6 +20,7 @@ export const ghFetch = cachedFunction(
     return $fetch(url, {
       baseURL: "https://api.github.com",
       ...opts,
+      method: (opts.method || "GET").toUpperCase() as any,
       headers: {
         "User-Agent": "fetch",
         Authorization: "token " + runtimeConfig.GH_TOKEN,
@@ -27,7 +28,7 @@ export const ghFetch = cachedFunction(
       },
     });
   },
-  cacheOptions("api")
+  cacheOptions("api"),
 );
 
 export const ghRepo = cachedFunction((repo: string) => {
@@ -43,7 +44,8 @@ export const ghRepoFiles = cachedFunction((repo: string, ref: string) => {
 }, cacheOptions("files"));
 
 export const ghMarkdown = cachedFunction(
-  (markdown: string, repo: string /*, _id: string */) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  (markdown: string, repo: string, _id: string) => {
     return ghFetch("/markdown", {
       method: "POST",
       headers: {
@@ -59,5 +61,5 @@ export const ghMarkdown = cachedFunction(
   {
     ...cacheOptions("markdown"),
     getKey: (_markdown, repo, id) => repo + "/" + id,
-  }
+  },
 );

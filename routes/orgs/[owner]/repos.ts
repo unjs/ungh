@@ -1,10 +1,9 @@
-import { ghFetch } from "~/utils/github";
 import type { GithubRepo } from "~types";
 
 export default eventHandler(async (event) => {
   // TODO: Do pagination
   const rawRepos = await ghFetch(
-    `orgs/${event.context.params.owner}/repos?per_page=100`
+    `orgs/${event.context.params.owner}/repos?per_page=100`,
   );
 
   const repos = rawRepos.map(
@@ -20,7 +19,7 @@ export default eventHandler(async (event) => {
         stars: rawRepo.stargazers_count,
         watchers: rawRepo.watchers,
         forks: rawRepo.forks,
-      }
+      },
   );
 
   return {

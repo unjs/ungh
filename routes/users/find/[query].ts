@@ -1,5 +1,4 @@
 import type { GithubUser } from "~types";
-import { ghFetch } from "~/utils/github";
 
 export default eventHandler(async (event) => {
   const res = await ghFetch("/search/users", {

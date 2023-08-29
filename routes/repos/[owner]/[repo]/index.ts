@@ -1,9 +1,8 @@
-import { ghRepo } from "~/utils/github";
 import type { GithubRepo } from "~types";
 
 export default eventHandler(async (event) => {
   const rawRepo = await ghRepo(
-    `${event.context.params.owner}/${event.context.params.repo}`
+    `${event.context.params.owner}/${event.context.params.repo}`,
   );
 
   const repo = <GithubRepo>{

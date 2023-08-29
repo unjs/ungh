@@ -1,5 +1,4 @@
 import { hash } from "ohash";
-import { ghMarkdown } from "~/utils/github";
 import type { GithubFileData } from "~types";
 
 export default eventHandler(async (event) => {

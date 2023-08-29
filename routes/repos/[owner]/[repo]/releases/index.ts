@@ -1,4 +1,3 @@
-import { ghFetch, ghMarkdown } from "~/utils/github";
 import type { GithubRelease } from "~types";
 
 export default eventHandler(async (event) => {
@@ -18,7 +17,7 @@ export default eventHandler(async (event) => {
         publishedAt: i.published_at,
         markdown: i.body,
         html: "",
-      }
+      },
   );
 
   await Promise.all(
@@ -26,9 +25,9 @@ export default eventHandler(async (event) => {
       release.html = await ghMarkdown(
         release.markdown,
         repo,
-        "release-" + release.tag
+        "release-" + release.tag,
       );
-    })
+    }),
   );
 
   return {
