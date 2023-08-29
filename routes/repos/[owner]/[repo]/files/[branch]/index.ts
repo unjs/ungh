@@ -1,4 +1,3 @@
-import { ghRepoFiles } from "~/utils/github";
 import type { GithubFile } from "~types";
 
 export default eventHandler(async (event) => {
@@ -14,7 +13,7 @@ export default eventHandler(async (event) => {
           mode: i.mode,
           sha: i.sha,
           size: i.size,
-        }
+        },
     );
 
   return {

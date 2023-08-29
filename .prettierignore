@@ -3,3 +3,4 @@
 .cache
 .temp
 .nitro
+pnpm-lock.yaml

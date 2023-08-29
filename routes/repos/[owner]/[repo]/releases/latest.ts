@@ -1,4 +1,3 @@
-import { ghMarkdown, ghFetch } from "~/utils/github";
 import type { GithubRelease } from "~types";
 
 export default eventHandler(async (event) => {

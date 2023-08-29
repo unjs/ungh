@@ -12,5 +12,5 @@ export default eventHandler(
 
   <br>
   Learn more: <a href="${url}">${url}</a>
-`
+`,
 );
