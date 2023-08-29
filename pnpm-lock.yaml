@@ -9,13 +9,13 @@ devDependencies:
     specifier: ^8.48.0
     version: 8.48.0
   eslint-config-unjs:
-    specifier: ^0.2.0
+    specifier: ^0.2.1
     version: 0.2.1(eslint@8.48.0)(typescript@5.2.2)
   nitropack:
     specifier: ^2.6.2
     version: 2.6.2
   prettier:
-    specifier: ^3.0.1
+    specifier: ^3.0.3
     version: 3.0.3
   typescript:
     specifier: ^5.2.2
