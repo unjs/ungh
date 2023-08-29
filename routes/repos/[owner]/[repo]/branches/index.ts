@@ -1,5 +1,4 @@
 import type { GitHubBranches } from "~types";
-import { ghFetch } from "~/utils/github";
 
 export default eventHandler(async (event) => {
   const repo = `${event.context.params.owner}/${event.context.params.repo}`;
@@ -11,8 +10,6 @@ export default eventHandler(async (event) => {
         name: i.name,
         commit: i.commit,
         protected: i.protected,
-        protection: i.protction,
-        protection_url: i.protection_url,
       },
   );
 
