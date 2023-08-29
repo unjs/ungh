@@ -13,7 +13,7 @@ export default eventHandler(async (event) => {
         protected: i.protected,
         protection: i.protction,
         protection_url: i.protection_url,
-      }
+      },
   );
 
   return { branches };
