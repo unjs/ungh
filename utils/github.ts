@@ -46,6 +46,9 @@ export const ghRepoFiles = cachedFunction((repo: string, ref: string) => {
 export const ghMarkdown = cachedFunction(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (markdown: string, repo: string, _id: string) => {
+    if (!markdown) {
+      return "";
+    }
     return ghFetch("/markdown", {
       method: "POST",
       headers: {
