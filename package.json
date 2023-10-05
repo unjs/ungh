@@ -18,5 +18,8 @@
     "prettier": "^3.0.3",
     "typescript": "^5.2.2"
   },
+  "resolutions": {
+    "nitropack": "npm:nitropack-edge@latest"
+  },
   "packageManager": "pnpm@8.7.1"
 }

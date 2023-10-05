@@ -30,6 +30,7 @@ export const ghFetch = cachedFunction(
   },
   {
     ...cacheOptions("api"),
+    integrity: "cb2RkuNE4G",
     validate(entry) {
       if (
         !entry.value ||
