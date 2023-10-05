@@ -14,7 +14,7 @@
   "devDependencies": {
     "eslint": "^8.50.0",
     "eslint-config-unjs": "^0.2.1",
-    "nitropack": "^2.6.3",
+    "nitropack": "npm:nitropack-edge@latest",
     "prettier": "^3.0.3",
     "typescript": "^5.2.2"
   },

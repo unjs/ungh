@@ -16,7 +16,7 @@ devDependencies:
     version: 0.2.1(eslint@8.50.0)(typescript@5.2.2)
   nitropack:
     specifier: npm:nitropack-edge@latest
-    version: /nitropack-edge@2.6.4-28275372.0599ace
+    version: /nitropack-edge@2.6.4-28275477.3f07e05
   prettier:
     specifier: ^3.0.3
     version: 3.0.3
@@ -3008,8 +3008,8 @@ packages:
     resolution: {integrity: sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw==}
     dev: true
 
-  /nitropack-edge@2.6.4-28275372.0599ace:
-    resolution: {integrity: sha512-GAaJrNzmRdwfL5Ng99y0w1rNO5xjTPCjabbSnlIhK2wSSzVSdqO8C/zeV5mOy0OcEHouOoMuL0Qy5c/KTomROQ==}
+  /nitropack-edge@2.6.4-28275477.3f07e05:
+    resolution: {integrity: sha512-HR0gocJ38DLtsJkMhVCmzswgmE0F18Nr5TqcWpRibanjiyfPqyJIfScSr048/LkAnfW0wNRjj5QDuL8mdgB+cg==}
     engines: {node: ^16.11.0 || >=17.0.0}
     hasBin: true
     peerDependencies:
