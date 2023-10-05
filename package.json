@@ -12,9 +12,9 @@
     "test:types": "tsc --noEmit"
   },
   "devDependencies": {
-    "eslint": "^8.48.0",
+    "eslint": "^8.50.0",
     "eslint-config-unjs": "^0.2.1",
-    "nitropack": "^2.6.2",
+    "nitropack": "^2.6.3",
     "prettier": "^3.0.3",
     "typescript": "^5.2.2"
   },
