@@ -28,8 +28,25 @@ export const ghFetch = cachedFunction(
       },
     });
   },
-  cacheOptions("api"),
+  {
+    ...cacheOptions("api"),
+    validate(entry) {
+      if (
+        !entry.value ||
+        isEmptyArray(entry.value) ||
+        entry.value?.total_count === 0 ||
+        isEmptyArray(entry.value?.items)
+      ) {
+        return false;
+      }
+      return true;
+    },
+  },
 );
+
+function isEmptyArray(val) {
+  return Array.isArray(val) && val.length === 0;
+}
 
 export const ghRepo = cachedFunction((repo: string) => {
   return ghFetch(`/repos/${repo}`);
