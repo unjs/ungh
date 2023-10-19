@@ -21,5 +21,5 @@
   "resolutions": {
     "nitropack": "npm:nitropack-edge@latest"
   },
-  "packageManager": "pnpm@8.8.0"
+  "packageManager": "pnpm@8.9.2"
 }
