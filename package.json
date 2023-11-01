@@ -12,7 +12,7 @@
     "test:types": "tsc --noEmit"
   },
   "devDependencies": {
-    "eslint": "^8.51.0",
+    "eslint": "^8.52.0",
     "eslint-config-unjs": "^0.2.1",
     "nitropack": "npm:nitropack-edge@latest",
     "prettier": "^3.0.3",
@@ -21,5 +21,5 @@
   "resolutions": {
     "nitropack": "npm:nitropack-edge@latest"
   },
-  "packageManager": "pnpm@8.9.2"
+  "packageManager": "pnpm@8.10.2"
 }
