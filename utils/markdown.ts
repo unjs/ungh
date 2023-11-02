@@ -18,7 +18,10 @@ export function resolveMarkdownRelativeLinks(
       }
       // match a link (e.g. [./example](./example), will replace the link, not the text)
       if (url) {
-      return match.replace(`(${path})`, `(${cdnBaseURL}/${path.replace(/^\.\//, "")})`);
+        return match.replace(
+          `(${path})`,
+          `(${cdnBaseURL}/${path.replace(/^\.\//, "")})`,
+        );
       }
       return match.replace(path, `${cdnBaseURL}/${path.replace(/^\.\//, "")}`);
     },
