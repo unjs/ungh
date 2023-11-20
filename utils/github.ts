@@ -16,7 +16,7 @@ const cacheOptions = (name: string): CacheOptions => ({
 });
 
 export const ghFetch = cachedFunction(
-  <T=any>(url: string, opts: FetchOptions = {}) => {
+  <T = any>(url: string, opts: FetchOptions = {}) => {
     return $fetch<T>(url, {
       baseURL: "https://api.github.com",
       ...opts,
