@@ -5,7 +5,7 @@ const runtimeConfig = useRuntimeConfig();
 
 const commonCacheOptions: CacheOptions = {
   group: "gh",
-  swr: true,
+  swr: false,
   maxAge: 60 * 60 * 6, // 6 hours
   staleMaxAge: 60 * 60 * 12, // 12 hours
 };
@@ -16,8 +16,8 @@ const cacheOptions = (name: string): CacheOptions => ({
 });
 
 export const ghFetch = cachedFunction(
-  (url: string, opts: FetchOptions = {}) => {
-    return $fetch(url, {
+  <T=any>(url: string, opts: FetchOptions = {}) => {
+    return $fetch<T>(url, {
       baseURL: "https://api.github.com",
       ...opts,
       method: (opts.method || "GET").toUpperCase() as any,
