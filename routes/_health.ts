@@ -8,7 +8,6 @@ export default eventHandler(async () => {
     },
   });
   const headers = Object.fromEntries(res.headers.entries());
-  console.log(headers);
   return {
     rateLimit:
       headers["x-ratelimit-remaining"] + "/" + headers["x-ratelimit-limit"],
