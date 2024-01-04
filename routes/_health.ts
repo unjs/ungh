@@ -1,4 +1,4 @@
-export default eventHandler(async () => {
+export default eventHandler(() => {
   // const runtimeConfig = useRuntimeConfig();
   // const res = await $fetch.raw("/meta", {
   //   baseURL: "https://api.github.com",
