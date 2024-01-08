@@ -1,10 +1,18 @@
 import type { GithubRepo } from "~types";
 
 export default eventHandler(async (event) => {
-  // TODO: Do pagination
-  const rawRepos = await ghFetch(
-    `orgs/${event.context.params.owner}/repos?per_page=100`,
+  const query = getQuery(event);
+  const page = query.page ? Number(query.page) : 1;
+  const perPage = query.perPage ? Number(query.perPage) : 100;
+
+  const owner = getRouterParam(event, "owner");
+
+  const { _data: rawRepos, headers } = await ghPagination(
+    `orgs/${owner}/repos`,
+    page,
+    perPage,
   );
+
 
   const repos = rawRepos.map(
     (rawRepo) =>
@@ -23,6 +31,8 @@ export default eventHandler(async (event) => {
       },
   );
 
+
+  setResponseHeader(event, "Link", headers.Link);
   return {
     repos,
   };
