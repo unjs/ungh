@@ -298,7 +298,7 @@ Get user repositories.
       "updatedAt": "2024-01-04T17:20:53Z",
       "watchers": 51,
       "forks": 0,
-      "defaultBranch": "main",
+      "defaultBranch": "main"
     }
   ]
 }
