@@ -13,7 +13,6 @@ export default eventHandler(async (event) => {
     perPage,
   );
 
-
   const repos = rawRepos.map(
     (rawRepo) =>
       <GithubRepo>{
@@ -30,7 +29,6 @@ export default eventHandler(async (event) => {
         defaultBranch: rawRepo.default_branch,
       },
   );
-
 
   setResponseHeader(event, "Link", headers.Link);
   return {
