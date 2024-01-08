@@ -3,9 +3,7 @@ import type { GithubRepo } from "~types";
 export default eventHandler(async (event) => {
   const name = getRouterParam(event, "name");
   // TODO: Do pagination
-  const rawRepos = await ghFetch(
-    `users/${name}/repos?per_page=100`,
-  );
+  const rawRepos = await ghFetch(`users/${name}/repos?per_page=100`);
 
   const repos = rawRepos.map(
     (rawRepo) =>
