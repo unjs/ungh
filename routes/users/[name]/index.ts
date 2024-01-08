@@ -8,6 +8,9 @@ export default eventHandler(async (event) => {
     user: <GithubUser>{
       id: user.id,
       username: user.login,
+      name: user.name,
+      twitter: user.twitter_username,
+      avatar: user.avatar_url,
     },
   };
 });

@@ -21,6 +21,9 @@ export interface GithubOrg {
 export interface GithubUser {
   id: string;
   username: string;
+  name: string,
+  twitter: string,
+  avatar: string,
 }
 
 export interface GithubContributor {
