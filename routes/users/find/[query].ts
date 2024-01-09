@@ -15,6 +15,9 @@ export default eventHandler(async (event) => {
   const user = <GithubUser>{
     id: res.items[0].id,
     username: res.items[0].login,
+    name: res.items[0].name,
+    twitter: res.items[0].twitter_username,
+    avatar: res.items[0].avatar_url,
   };
 
   return { user };

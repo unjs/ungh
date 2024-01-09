@@ -263,6 +263,49 @@ Multiple items can be separated by either `,` or `+` or ` ` (space). Each item c
 }
 ```
 
+### `/users/{username}`
+
+Find one github user by username.
+
+**Example:** https://ungh.cc/users/pi0
+
+```json
+{
+  "user": {
+    "id": 5158436,
+    "name": "Pooya Parsa",
+    "twitter": null,
+    "username": "pi0"
+  }
+}
+```
+
+### `/users/{username}/repos`
+
+Get user repositories.
+
+**Example:** https://ungh.cc/users/pi0/repos
+
+```json
+{
+  "repos": [
+    {
+      "id": 674019467,
+      "name": "h3-on-edge",
+      "description": "⚡️ Edge workers with straming powered by unjs/h3",
+      "repo": "pi0/h3-on-edge",
+      "stars": 51,
+      "pushedAt": "2024-01-07T16:54:46Z",
+      "createdAt": "2023-08-03T00:53:31Z",
+      "updatedAt": "2024-01-04T17:20:53Z",
+      "watchers": 51,
+      "forks": 0,
+      "defaultBranch": "main"
+    }
+  ]
+}
+```
+
 ### `/users/find/{query}`
 
 Find one github user by email or other query.
@@ -273,6 +316,8 @@ Find one github user by email or other query.
 {
   "user": {
     "id": 5158436,
+    "name": "Pooya Parsa",
+    "twitter": null,
     "username": "pi0"
   }
 }
