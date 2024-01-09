@@ -273,6 +273,8 @@ Find one github user by username.
 {
   "user": {
     "id": 5158436,
+    "name": "Pooya Parsa",
+    "twitter": null,
     "username": "pi0"
   }
 }
@@ -314,6 +316,8 @@ Find one github user by email or other query.
 {
   "user": {
     "id": 5158436,
+    "name": "Pooya Parsa",
+    "twitter": null,
     "username": "pi0"
   }
 }
