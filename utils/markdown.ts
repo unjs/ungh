@@ -21,10 +21,10 @@ export function resolveMarkdownRelativeLinks(
        * @example [link](./image.png) => [link](https://cdn.com/image.png)
        * @example [./src/file.ts](./src/file.ts) => [./src/file.ts](https://cdn.com/src/file.ts)
        * @example ./src/file.ts => https://cdn.com/src/file.ts
-      */
-      const searchRegExp = new RegExp(`(?<before>[^[])(?<url>${path})`, "g") // [^[] matches any character except [
+       */
+      const searchRegExp = new RegExp(`(?<before>[^[])(?<url>${path})`, "g"); // [^[] matches any character except [
       return match.replace(searchRegExp, (_, before, url) => {
-          return `${before}${cdnBaseURL}/${url.replace(/^\.\//, "")}`
+        return `${before}${cdnBaseURL}/${url.replace(/^\.\//, "")}`;
       });
     },
   );
