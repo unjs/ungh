@@ -1,8 +1,11 @@
+import { Endpoints } from "@octokit/types";
 import type { GithubUser } from "~types";
 import { ghFetch } from "~/utils/github";
 
 export default eventHandler(async (event) => {
-  const res = await ghFetch("/search/users", {
+  const res = await ghFetch<
+    Endpoints["GET /search/users"]['response']['data']
+  >("/search/users", {
     params: { q: event.context.params.query },
   });
 

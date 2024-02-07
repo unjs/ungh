@@ -1,9 +1,12 @@
+import { Endpoints } from "@octokit/types";
 import { ghMarkdown, ghFetch } from "~/utils/github";
 import type { GithubRelease } from "~types";
 
 export default eventHandler(async (event) => {
   const repo = `${event.context.params.owner}/${event.context.params.repo}`;
-  const i = await ghFetch(`repos/${repo}/releases/latest`);
+  const i = await ghFetch<
+    Endpoints["GET /repos/{owner}/{repo}/releases/latest"]['response']['data']
+  >(`repos/${repo}/releases/latest`);
 
   const release: GithubRelease = {
     id: i.id,
@@ -15,7 +18,7 @@ export default eventHandler(async (event) => {
     createdAt: i.created_at,
     publishedAt: i.published_at,
     markdown: i.body,
-    html: await ghMarkdown(i.body, repo, "release-" + i.tag),
+    html: await ghMarkdown(i.body, repo, "release-" + i.tag_name),
   };
 
   return {

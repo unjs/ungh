@@ -1,5 +1,5 @@
-import type { CacheOptions } from "nitropack";
-import type { FetchOptions } from "ohmyfetch";
+import { Endpoints } from "@octokit/types";
+import type { CacheOptions, NitroFetchOptions } from "nitropack";
 
 const runtimeConfig = useRuntimeConfig();
 
@@ -16,38 +16,46 @@ const cacheOptions = (name: string): CacheOptions => ({
 });
 
 export const ghFetch = cachedFunction(
-  (url: string, opts: FetchOptions = {}) => {
+  (url, opts = {}) => {
     return $fetch(url, {
       baseURL: "https://api.github.com",
       ...opts,
       headers: {
         "User-Agent": "fetch",
-        Authorization: "token " + runtimeConfig.GH_TOKEN,
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${runtimeConfig.GH_TOKEN}`,
+        'X-GitHub-Api-Version': "2022-11-28",
         ...opts.headers,
       },
     });
   },
   cacheOptions("api")
-);
+) as <T extends string | Record<string, any> = any>(url: string, opts?: NitroFetchOptions<string, "get" | "post">) => Promise<T>;
 
-export const ghRepo = cachedFunction((repo: string) => {
+export const ghRepo = cachedFunction<
+  Endpoints["GET /repos/{owner}/{repo}"]['response']['data']
+>((repo: string) => {
   return ghFetch(`/repos/${repo}`);
 }, cacheOptions("repo"));
 
-export const ghRepoContributors = cachedFunction((repo: string) => {
+export const ghRepoContributors = cachedFunction<
+  Endpoints["GET /repos/{owner}/{repo}/contributors"]['response']['data']
+>((repo: string) => {
   return ghFetch(`/repos/${repo}/contributors`);
 }, cacheOptions("contributors"));
 
-export const ghRepoFiles = cachedFunction((repo: string, ref: string) => {
+export const ghRepoFiles = cachedFunction<
+  Endpoints["GET /repos/{owner}/{repo}/git/trees/{tree_sha}"]['response']['data']
+>((repo: string, ref: string) => {
   return ghFetch(`/repos/${repo}/git/trees/${ref}?recursive=1`);
 }, cacheOptions("files"));
 
-export const ghMarkdown = cachedFunction(
-  (markdown: string, repo: string /*, _id: string */) => {
+export const ghMarkdown = cachedFunction<
+  Endpoints["POST /markdown"]['response']['data']
+>((markdown: string, repo: string) => {
     return ghFetch("/markdown", {
       method: "POST",
       headers: {
-        accept: "application/vnd.github+json",
         "content-type": "text/x-markdown",
       },
       body: JSON.stringify({

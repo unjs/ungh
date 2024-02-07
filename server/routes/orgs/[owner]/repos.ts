@@ -1,9 +1,12 @@
+import { Endpoints } from "@octokit/types";
 import { ghFetch } from "~/utils/github";
 import type { GithubRepo } from "~types";
 
 export default eventHandler(async (event) => {
   // TODO: Do pagination
-  const rawRepos = await ghFetch(
+  const rawRepos = await ghFetch<
+    Endpoints["GET /orgs/{org}/repos"]['response']['data']
+  >(
     `orgs/${event.context.params.owner}/repos?per_page=100`
   );
 

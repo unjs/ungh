@@ -22,7 +22,7 @@ export default eventHandler(async (event) => {
   );
 
   const stars = Object.fromEntries(starsArr);
-  const totalStars = starsArr.reduce((c, r) => c + r[1], 0);
+  const totalStars = starsArr.reduce((c, r) => c + (r[1] as number), 0);
 
   return {
     totalStars,

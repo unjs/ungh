@@ -18,12 +18,12 @@ export interface GithubOrg {
 }
 
 export interface GithubUser {
-  id: string;
+  id: number;
   username: string;
 }
 
 export interface GithubContributor {
-  id: string;
+  id: number;
   username: string;
   contributions: number;
 }
@@ -46,6 +46,11 @@ export interface GithubRelease {
   publishedAt: string;
   markdown: string;
   html: string;
+}
+
+export interface GithubPull {
+  id: number;
+  title: string;
 }
 
 export interface GithubFileData {

@@ -8,11 +8,11 @@ export default eventHandler(async (event) => {
 
   const contributors = res.map(
     (i) =>
-      <GithubContributor>{
+      (<GithubContributor>{
         id: i.id,
         username: i.login,
         contributions: i.contributions || 0,
-      }
+      })
   );
 
   return {
