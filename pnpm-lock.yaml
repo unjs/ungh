@@ -15,8 +15,8 @@ devDependencies:
     specifier: npm:nitropack-nightly@latest
     version: /nitropack-nightly@2.8.0-28341315.0a5911e
   prettier:
-    specifier: ^3.2.2
-    version: 3.2.2
+    specifier: ^3.2.4
+    version: 3.2.4
   typescript:
     specifier: ^5.3.3
     version: 5.3.3
@@ -2336,7 +2336,7 @@ packages:
     hasBin: true
     dependencies:
       colorette: 2.0.20
-      defu: 6.1.3
+      defu: 6.1.4
       https-proxy-agent: 7.0.2
       mri: 1.2.0
       node-fetch-native: 1.6.1
@@ -2441,8 +2441,8 @@ packages:
       duplexer: 0.1.2
     dev: true
 
-  /h3-nightly@1.10.1-1705056904.845eeca:
-    resolution: {integrity: sha512-dDNr+eK0g/HRNKJ/8l9ocm2xBkEzwtXkTuYKgKcKWMm/qNBz4jUTMdyoWO0PFbbCEhWAr121bS6lrenZYGDy8Q==}
+  /h3-nightly@1.10.2-1706221022.da128d8:
+    resolution: {integrity: sha512-wdAVaR+mEpYuDs5xdxNtlSIiCp9Y1o8KyUSgEZHEPMMS83BpaCiSe5ylkz8WhXzlLxGiXamcyrTvbCu7hNoHTQ==}
     dependencies:
       cookie-es: 1.0.0
       defu: 6.1.4
@@ -2459,7 +2459,7 @@ packages:
     resolution: {integrity: sha512-+F3ZqrNV/CFXXfZ2lXBINHi+rM4Xw3CDC5z2CDK3NMPocjonKipGLLDSkrqY9DOrioZNPTIdDMWfQKm//3X2DA==}
     dependencies:
       cookie-es: 1.0.0
-      defu: 6.1.3
+      defu: 6.1.4
       destr: 2.0.2
       iron-webcrypto: 1.0.0
       radix3: 1.1.0
@@ -3158,7 +3158,7 @@ packages:
       fs-extra: 11.1.1
       globby: 14.0.0
       gzip-size: 7.0.0
-      h3: /h3-nightly@1.10.1-1705056904.845eeca
+      h3: /h3-nightly@1.10.2-1706221022.da128d8
       hookable: 5.5.3
       httpxy: 0.1.5
       is-primitive: 3.0.1
@@ -3512,8 +3512,8 @@ packages:
     engines: {node: '>= 0.8.0'}
     dev: true
 
-  /prettier@3.2.2:
-    resolution: {integrity: sha512-HTByuKZzw7utPiDO523Tt2pLtEyK7OibUD9suEJQrPUCYQqrHr74GGX6VidMrovbf/I50mPqr8j/II6oBAuc5A==}
+  /prettier@3.2.4:
+    resolution: {integrity: sha512-FWu1oLHKCrtpO1ypU6J0SbK2d9Ckwysq6bHj/uaCP26DxrPpppCLQRGVuqAxSTvhF00AcvDRyYrLNW7ocBhFFQ==}
     engines: {node: '>=14'}
     hasBin: true
     dev: true
@@ -3558,7 +3558,7 @@ packages:
   /rc9@2.1.1:
     resolution: {integrity: sha512-lNeOl38Ws0eNxpO3+wD1I9rkHGQyj1NU1jlzv4go2CtEnEQEUfqnIvZG7W+bC/aXdJ27n5x/yUjb6RoT9tko+Q==}
     dependencies:
-      defu: 6.1.3
+      defu: 6.1.4
       destr: 2.0.2
       flat: 5.0.2
     dev: true
