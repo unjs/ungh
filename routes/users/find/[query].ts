@@ -3,7 +3,7 @@ import type { GithubUser } from "~types";
 const anonEmailRegex = /^\d+\+(.+)@users.noreply.github.com$/;
 
 export default eventHandler(async (event) => {
-  let query = event.context.params.query + '';
+  let query = event.context.params.query + "";
 
   const anonMatch = query.match(anonEmailRegex);
   if (anonMatch) {
