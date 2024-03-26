@@ -12,8 +12,8 @@ devDependencies:
     specifier: ^0.2.1
     version: 0.2.1(eslint@8.57.0)(typescript@5.4.3)
   nitropack:
-    specifier: ^2.9.4
-    version: 2.9.4
+    specifier: ^2.9.5
+    version: 2.9.5
   prettier:
     specifier: ^3.2.5
     version: 3.2.5
@@ -2494,7 +2494,7 @@ packages:
       citty: 0.1.6
       consola: 3.2.3
       defu: 6.1.4
-      node-fetch-native: 1.6.2
+      node-fetch-native: 1.6.4
       nypm: 0.3.8
       ohash: 1.1.3
       pathe: 1.1.2
@@ -2617,7 +2617,7 @@ packages:
       destr: 2.0.3
       iron-webcrypto: 1.0.0
       ohash: 1.1.3
-      radix3: 1.1.1
+      radix3: 1.1.2
       ufo: 1.5.3
       uncrypto: 0.1.3
       unenv: 1.9.0
@@ -3325,8 +3325,8 @@ packages:
     resolution: {integrity: sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw==}
     dev: true
 
-  /nitropack@2.9.4:
-    resolution: {integrity: sha512-i/cbDW5qfZS6pQR4DrlQOFlNoNvQVBuiy7EEvMlrqkmMGXiIJY1WW7L7D4/6m9dF1cwitOu7k0lJWVn74gxfvw==}
+  /nitropack@2.9.5:
+    resolution: {integrity: sha512-ClanSILi9O6HX95QNIC+TwxojpRpOSn9n3e3wmHExAHhLN5HdnHGmHN4LwtJdE2p91nse3kDULOTR7k1xRVJ/g==}
     engines: {node: ^16.11.0 || >=17.0.0}
     hasBin: true
     peerDependencies:
@@ -3379,15 +3379,15 @@ packages:
       mime: 4.0.1
       mlly: 1.6.1
       mri: 1.2.0
-      node-fetch-native: 1.6.2
-      ofetch: 1.3.3
+      node-fetch-native: 1.6.4
+      ofetch: 1.3.4
       ohash: 1.1.3
       openapi-typescript: 6.7.5
       pathe: 1.1.2
       perfect-debounce: 1.0.0
       pkg-types: 1.0.3
       pretty-bytes: 6.1.1
-      radix3: 1.1.1
+      radix3: 1.1.2
       rollup: 4.13.0
       rollup-plugin-visualizer: 5.12.0(rollup@4.13.0)
       scule: 1.3.0
@@ -3428,8 +3428,8 @@ packages:
     engines: {node: ^16 || ^18 || >= 20}
     dev: true
 
-  /node-fetch-native@1.6.2:
-    resolution: {integrity: sha512-69mtXOFZ6hSkYiXAVB5SqaRvrbITC/NPyqv7yuu/qw0nmgPyYbIMYYNIDhNtwPrzk0ptrimrLz/hhjvm4w5Z+w==}
+  /node-fetch-native@1.6.4:
+    resolution: {integrity: sha512-IhOigYzAKHd244OC0JIMIUrjzctirCmPkaIfhDeGcEETWof5zKYUW7e7MYvChGWh/4CJeXEgsRyGzuF334rOOQ==}
     dev: true
 
   /node-fetch@2.7.0:
@@ -3556,11 +3556,11 @@ packages:
       es-abstract: 1.22.5
     dev: true
 
-  /ofetch@1.3.3:
-    resolution: {integrity: sha512-s1ZCMmQWXy4b5K/TW9i/DtiN8Ku+xCiHcjQ6/J/nDdssirrQNOoB165Zu8EqLMA2lln1JUth9a0aW9Ap2ctrUg==}
+  /ofetch@1.3.4:
+    resolution: {integrity: sha512-KLIET85ik3vhEfS+3fDlc/BAZiAp+43QEC/yCo5zkNoY2YaKvNkOaFr/6wCFgFH1kuYQM5pMNi0Tg8koiIemtw==}
     dependencies:
       destr: 2.0.3
-      node-fetch-native: 1.6.2
+      node-fetch-native: 1.6.4
       ufo: 1.5.3
     dev: true
 
@@ -3787,8 +3787,8 @@ packages:
     resolution: {integrity: sha512-kJt5qhMxoszgU/62PLP1CJytzd2NKetjSRnyuj31fDd3Rlcz3fzlFdFLD1SItunPwyqEOkca6GbV612BWfaBag==}
     dev: true
 
-  /radix3@1.1.1:
-    resolution: {integrity: sha512-yUUd5VTiFtcMEx0qFUxGAv5gbMc1un4RvEO1JZdP7ZUl/RHygZK6PknIKntmQRZxnMY3ZXD2ISaw1ij8GYW1yg==}
+  /radix3@1.1.2:
+    resolution: {integrity: sha512-b484I/7b8rDEdSDKckSSBA8knMpcdsXudlE/LNL639wFoHKwLbEkQFZHWEYwDC0wa0FKUcCY+GAF73Z7wxNVFA==}
     dev: true
 
   /randombytes@2.1.0:
@@ -4545,7 +4545,7 @@ packages:
       acorn: 8.11.3
       estree-walker: 3.0.3
       magic-string: 0.30.8
-      unplugin: 1.8.2
+      unplugin: 1.10.0
     dev: true
 
   /undici-types@5.26.5:
@@ -4565,7 +4565,7 @@ packages:
       consola: 3.2.3
       defu: 6.1.4
       mime: 3.0.0
-      node-fetch-native: 1.6.2
+      node-fetch-native: 1.6.4
       pathe: 1.1.2
     dev: true
 
@@ -4589,7 +4589,7 @@ packages:
       pkg-types: 1.0.3
       scule: 1.3.0
       strip-literal: 1.3.0
-      unplugin: 1.8.2
+      unplugin: 1.10.0
     transitivePeerDependencies:
       - rollup
     dev: true
@@ -4602,15 +4602,6 @@ packages:
   /unplugin@1.10.0:
     resolution: {integrity: sha512-CuZtvvO8ua2Wl+9q2jEaqH6m3DoQ38N7pvBYQbbaeNlWGvK2l6GHiKi29aIHDPoSxdUzQ7Unevf1/ugil5X6Pg==}
     engines: {node: '>=14.0.0'}
-    dependencies:
-      acorn: 8.11.3
-      chokidar: 3.6.0
-      webpack-sources: 3.2.3
-      webpack-virtual-modules: 0.6.1
-    dev: true
-
-  /unplugin@1.8.2:
-    resolution: {integrity: sha512-fgldo8hwP8dV94ne3rwQqlZkZWdcqH4K48bXax+N0MrBapfvoTbIQt9L2Vj/DzZAbWI/+kd2b9ZDsB7QZgz/hw==}
     dependencies:
       acorn: 8.11.3
       chokidar: 3.6.0
@@ -4670,8 +4661,8 @@ packages:
       listhen: 1.7.2
       lru-cache: 10.2.0
       mri: 1.2.0
-      node-fetch-native: 1.6.2
-      ofetch: 1.3.3
+      node-fetch-native: 1.6.4
+      ofetch: 1.3.4
       ufo: 1.5.3
     transitivePeerDependencies:
       - uWebSockets.js
