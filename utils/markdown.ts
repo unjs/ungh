@@ -1,6 +1,12 @@
 const HTML_LINK_RE = /(<img.*?src="(?<url>.*?)".*?>)/g;
-const MARKDOWN_LINK_RE = /\[.*?]\((?<url>.*?)\)/g;
-const MARKDOWN_NESTED_LINK_RE = /\((?<url>.*?)\)/g;
+const HTML_LINK_NESTED_RE = /src="(?<url>.*?)"/g;
+
+const MARKDOWN_LINK_RE = /(\[.*?]\((?<url>.*?)\))/g;
+const MARKDOWN_LINK_NESTED_RE = /\((?<url>.*?)\)/g;
+
+function alreadyURL(path: string) {
+  return path.startsWith("http") || path.startsWith("https");
+}
 
 /**
  * Creates a string replacement function, prefixing matched strings with `baseURL`
@@ -14,15 +20,20 @@ function createReplacerFn(baseURL: string, nested?: RegExp) {
 
   return (match, path: string) => {
     // If path is already a URL, return the match
-    if (path.startsWith("http") || path.startsWith("https")) {
+    if (alreadyURL(path)) {
       return match;
     }
 
     // Replace nested link if nested RE is provided (to handle edge-case `[./relative-link](./relative-link)`)
     if (nested) {
-      return match.replace(nested, (m, path: string) =>
-        m.replace(path, resolveAbsoluteURL(path)),
-      );
+      return match.replace(nested, (m, path: string) => {
+        // If path is already a URL, return the match
+        if (alreadyURL(path)) {
+          return m;
+        }
+
+        return m.replace(path, resolveAbsoluteURL(path));
+      });
     }
 
     return match.replace(path, resolveAbsoluteURL(path));
@@ -39,9 +50,12 @@ export function resolveMarkdownRelativeLinks(
   options: { cdnBaseURL: string; githubBaseURL: string },
 ) {
   return content
-    .replace(HTML_LINK_RE, createReplacerFn(options.cdnBaseURL))
+    .replace(
+      HTML_LINK_RE,
+      createReplacerFn(options.cdnBaseURL, HTML_LINK_NESTED_RE),
+    )
     .replace(
       MARKDOWN_LINK_RE,
-      createReplacerFn(options.githubBaseURL, MARKDOWN_NESTED_LINK_RE),
+      createReplacerFn(options.githubBaseURL, MARKDOWN_LINK_NESTED_RE),
     );
 }
