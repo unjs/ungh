@@ -1,17 +1,31 @@
-const HTML_LINK_RE = /(<img.*?src="(?<url2>.*?)".*?>)/g;
-const MARKDOWN_LINK_RE = /(?<link>\[.*?]\((?<url>.*?)\))/g;
+const HTML_LINK_RE = /(<img.*?src="(?<url>.*?)".*?>)/g;
+const MARKDOWN_LINK_RE = /\[.*?]\((?<url>.*?)\)/g;
+const MARKDOWN_NESTED_LINK_RE = /\((?<url>.*?)\)/g;
 
 /**
  * Creates a string replacement function, prefixing matched strings with `baseURL`
+ *
+ * @param nested - Optional regular expression used to match nested paths.
  */
-function createReplacerFn(baseURL: string) {
-  return (match, _, url: string | undefined, url2: string) => {
-    const path = url || url2;
+function createReplacerFn(baseURL: string, nested?: RegExp) {
+  function resolveAbsoluteURL(path: string) {
+    return `${baseURL}/${path.replace(/^\.\//, "")}`;
+  }
+
+  return (match, path: string) => {
     // If path is already a URL, return the match
     if (path.startsWith("http") || path.startsWith("https")) {
       return match;
     }
-    return match.replace(path, `${baseURL}/${path.replace(/^\.\//, "")}`);
+
+    // Replace nested link if nested RE is provided (to handle edge-case `[./relative-link](./relative-link)`)
+    if (nested) {
+      return match.replace(nested, (m, path: string) =>
+        m.replace(path, resolveAbsoluteURL(path)),
+      );
+    }
+
+    return match.replace(path, resolveAbsoluteURL(path));
   };
 }
 
@@ -26,5 +40,8 @@ export function resolveMarkdownRelativeLinks(
 ) {
   return content
     .replace(HTML_LINK_RE, createReplacerFn(options.cdnBaseURL))
-    .replace(MARKDOWN_LINK_RE, createReplacerFn(options.githubBaseURL));
+    .replace(
+      MARKDOWN_LINK_RE,
+      createReplacerFn(options.githubBaseURL, MARKDOWN_NESTED_LINK_RE),
+    );
 }
