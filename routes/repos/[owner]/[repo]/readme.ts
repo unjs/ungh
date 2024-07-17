@@ -12,14 +12,13 @@ export default cachedEventHandler(
       cdnBaseURL: `${GH_RAW_URL}/${repo}/${defaultBranch}`,
       githubBaseURL: `${GH_PATH_URL}/${repo}/tree/${defaultBranch}`,
     };
-    const markdown = await $fetch<string>(
-      `${linkOptions.cdnBaseURL}/README.md`,
-    );
+    const res = await $fetch<string>(`${linkOptions.cdnBaseURL}/README.md`);
+    const markdown = resolveMarkdownRelativeLinks(res, linkOptions);
     const html = await ghMarkdown(markdown, repo, "readme");
 
     return {
-      markdown: resolveMarkdownRelativeLinks(markdown, linkOptions),
-      html: resolveMarkdownRelativeLinks(html, linkOptions),
+      markdown,
+      html,
     };
   },
   {
