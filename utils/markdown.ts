@@ -5,7 +5,7 @@ const MARKDOWN_LINK_RE = /(\[.*?]\((?<url>.*?)\))/g;
 const MARKDOWN_LINK_NESTED_RE = /\((?<url>.*?)\)/g;
 
 function alreadyURL(path: string) {
-  return path.startsWith("http") || path.startsWith("https");
+  return path.startsWith("http");
 }
 
 /**
