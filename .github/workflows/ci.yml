@@ -21,4 +21,5 @@ jobs:
       - run: pnpm install
       - run: pnpm lint
       - run: pnpm test:types
+      - run: pnpm vitest --coverage && rm -rf coverage
       - run: NITRO_PRESET=cloudflare_pages pnpm build
