@@ -1,6 +1,6 @@
 import type { GithubUser } from "~types";
 
-const anonEmailRegex = /^\d+\+(.+)@users.noreply.github.com$/;
+const anonEmailRegex = /^(?:\d+\+)?(.+)@users\.noreply\.github\.com$/;
 
 export default eventHandler(async (event) => {
   let query = event.context.params.query + "";
