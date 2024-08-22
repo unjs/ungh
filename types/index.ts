@@ -39,6 +39,15 @@ export interface GithubFile {
   size: number;
 }
 
+export interface GithubReleaseAsset {
+  contentType: string;
+  size: number;
+  createdAt: string;
+  updatedAt: string;
+  downloadCount: number;
+  downloadUrl: string;
+}
+
 export interface GithubRelease {
   id: number;
   tag: string;
@@ -50,6 +59,7 @@ export interface GithubRelease {
   publishedAt: string;
   markdown: string;
   html: string;
+  assets: GithubReleaseAsset[];
 }
 
 export interface GithubFileData {
