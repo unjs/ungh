@@ -6,8 +6,8 @@
     "prepare": "nitropack prepare",
     "build": "nitropack build",
     "dev": "nitropack dev",
-    "lint": "eslint --ext .ts,.js,.mjs,.cjs . && prettier -c .",
-    "lint:fix": "eslint --fix --ext .ts,.js,.mjs,.cjs . && prettier -w .",
+    "lint": "eslint . && prettier -c .",
+    "lint:fix": "eslint --fix . && prettier -w .",
     "test": "pnpm lint && pnpm test:types",
     "test:types": "tsc --noEmit"
   },
