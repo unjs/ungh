@@ -17,6 +17,17 @@ export default eventHandler(async (event) => {
         publishedAt: i.published_at,
         markdown: i.body,
         html: "",
+        assets:
+          "assets" in i
+            ? i.assets.map((a) => ({
+                contentType: a.content_type,
+                size: a.size,
+                createdAt: a.created_at,
+                updatedAt: a.updated_at,
+                downloadCount: a.download_count,
+                downloadUrl: a.browser_download_url,
+              }))
+            : [],
       },
   );
 
