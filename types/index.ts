@@ -10,6 +10,7 @@ export interface GithubRepo {
   watchers: number;
   forks: number;
   defaultBranch: string;
+  language: string;
 }
 
 export interface GithubOrg {

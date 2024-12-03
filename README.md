@@ -31,14 +31,15 @@ GitHub repository information.
     "id": 313641207,
     "name": "h3",
     "repo": "unjs/h3",
-    "description": "Minimal h(ttp) framework built for high performance and portability ⚡️",
+    "description": "⚡️ Minimal H(TTP) framework built for high performance and portability ",
     "createdAt": "2020-11-17T14:15:44Z",
-    "updatedAt": "2022-11-05T21:38:43Z",
-    "pushedAt": "2022-11-06T06:48:23Z",
-    "stars": 1168,
-    "watchers": 1168,
-    "forks": 59,
-    "defaultBranch": "main"
+    "updatedAt": "2024-11-09T15:43:41Z",
+    "pushedAt": "2024-11-07T10:48:51Z",
+    "stars": 3665,
+    "watchers": 16,
+    "forks": 218,
+    "defaultBranch": "main",
+    "language": "TypeScript"
   }
 }
 ```
@@ -235,11 +236,13 @@ GitHub organization repositories overview.
       "repo": "unjs/redirect-ssl",
       "description": "Connect/Express middleware to enforce https using is-https",
       "createdAt": "2017-07-19T19:04:11Z",
-      "updatedAt": "2022-09-22T09:47:25Z",
-      "pushedAt": "2022-04-08T20:29:48Z",
-      "stars": 93,
-      "watchers": 93,
-      "forks": 14
+      "updatedAt": "2024-10-18T12:48:35Z",
+      "pushedAt": "2024-04-29T10:13:46Z",
+      "stars": 100,
+      "watchers": 100,
+      "forks": 15,
+      "defaultBranch": "main",
+      "language": "TypeScript"
     }
   ]
 }
@@ -300,7 +303,8 @@ Get user repositories.
       "updatedAt": "2024-01-04T17:20:53Z",
       "watchers": 51,
       "forks": 0,
-      "defaultBranch": "main"
+      "defaultBranch": "main",
+      "language": "TypeScript"
     }
   ]
 }
