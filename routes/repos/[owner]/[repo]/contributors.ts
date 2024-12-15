@@ -11,6 +11,7 @@ export default eventHandler(async (event) => {
         id: i.id,
         username: i.login,
         contributions: i.contributions || 0,
+        avatar: i.avatar_url,
       },
   );
 

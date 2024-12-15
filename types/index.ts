@@ -30,6 +30,7 @@ export interface GithubContributor {
   id: string;
   username: string;
   contributions: number;
+  avatar: string;
 }
 
 export interface GithubFile {
