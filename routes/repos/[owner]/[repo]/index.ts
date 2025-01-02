@@ -16,7 +16,8 @@ export default eventHandler(async (event) => {
         watchers: rawRepo.subscribers_count,
         forks: rawRepo.forks,
         defaultBranch: rawRepo.default_branch,
-        language: rawRepo.language
+        language: rawRepo.language,
+        homepage: rawRepo.homepage
     };
 
     return {

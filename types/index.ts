@@ -11,6 +11,7 @@ export interface GithubRepo {
   forks: number;
   defaultBranch: string;
   language: string;
+  homepage: string;
 }
 
 export interface GithubOrg {
