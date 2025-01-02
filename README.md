@@ -39,7 +39,8 @@ GitHub repository information.
     "watchers": 16,
     "forks": 218,
     "defaultBranch": "main",
-    "language": "TypeScript"
+    "language": "TypeScript",
+    "homepage": ""
   }
 }
 ```
@@ -242,7 +243,8 @@ GitHub organization repositories overview.
       "watchers": 100,
       "forks": 15,
       "defaultBranch": "main",
-      "language": "TypeScript"
+      "language": "TypeScript",
+      "homepage": ""
     }
   ]
 }
@@ -304,7 +306,8 @@ Get user repositories.
       "watchers": 51,
       "forks": 0,
       "defaultBranch": "main",
-      "language": "TypeScript"
+      "language": "TypeScript",
+      "homepage": ""
     }
   ]
 }
