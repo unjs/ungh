@@ -1,3 +1,4 @@
+const GH_PATH_URL = "https://github.com";
 const GH_RAW_URL = "https://raw.githubusercontent.com";
 
 export default cachedEventHandler(
@@ -6,12 +7,18 @@ export default cachedEventHandler(
     const defaultBranch = await ghRepo(repo).then(
       (r) => r.default_branch || "main",
     );
-    const cdnBaseURL = `${GH_RAW_URL}/${repo}/${defaultBranch}`;
-    const markdown = await $fetch<string>(`${cdnBaseURL}/README.md`);
+
+    const linkOptions = {
+      cdnBaseURL: `${GH_RAW_URL}/${repo}/${defaultBranch}`,
+      githubBaseURL: `${GH_PATH_URL}/${repo}/tree/${defaultBranch}`,
+    };
+    const res = await $fetch<string>(`${linkOptions.cdnBaseURL}/README.md`);
+    const markdown = resolveMarkdownRelativeLinks(res, linkOptions);
     const html = await ghMarkdown(markdown, repo, "readme");
+
     return {
-      markdown: resolveMarkdownRelativeLinks(markdown, cdnBaseURL),
-      html: resolveMarkdownRelativeLinks(html, cdnBaseURL),
+      markdown,
+      html,
     };
   },
   {

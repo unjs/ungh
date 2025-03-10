@@ -8,7 +8,7 @@
     "dev": "nitropack dev",
     "lint": "eslint . && prettier -c .",
     "lint:fix": "eslint --fix . && prettier -w .",
-    "test": "pnpm lint && pnpm test:types",
+    "test": "pnpm lint && pnpm test:types && vitest --run --coverage",
     "test:types": "tsc --noEmit"
   },
   "devDependencies": {
@@ -16,7 +16,9 @@
     "eslint-config-unjs": "^0.4.2",
     "nitropack": "^2.10.4",
     "prettier": "^3.4.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "@vitest/coverage-v8": "^2.0.3",
+    "vitest": "^2.0.3"
   },
   "packageManager": "pnpm@9.15.3"
 }
