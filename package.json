@@ -18,5 +18,5 @@
     "prettier": "^3.5.3",
     "typescript": "^5.8.3"
   },
-  "packageManager": "pnpm@9.15.9"
+  "packageManager": "pnpm@10.10.0"
 }
