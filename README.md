@@ -2,6 +2,10 @@
 
 > Unlimited access to GitHub API
 
+> [!IMPORTANT]
+>
+> `/repos/<id>/files/<path>` endpoint redirects to original `raw.githubusercontent.com` endpoint due to service absue. ([#123](https://github.com/unjs/ungh/issues/123)).
+
 ## Why UNGH?
 
 Accessing to open source GitHub repository meta-data should be fast, easy, and straightforward. GitHub API is rate limited and requires an authentication token to increase limits. Even by using an API token, we need to share or generate it for each deployment and local development of apps and also deal with (increased) rate limits and deployment caching. GitHub REST API is also complex with (unnecessary) bigger payloads because of backward compatibility.
@@ -85,24 +89,6 @@ Get repository files tree on specific branch.
       "size": 5782
     }
   ]
-}
-```
-
-### `/repos/{owner}/{name}/files/{branch}/{...path}`
-
-Get file contents from a repository. If path ends with `.md`, an additional `html` field with rendered markup will be appended.
-
-**Example:** https://ungh.cc/repos/unjs/h3/files/main/README.md
-
-```json
-{
-  "meta": {
-    "url": "https://raw.githubusercontent.com/unjs/h3/main/README.md"
-  },
-  "file": {
-    "contents": "...",
-    "html": "..."
-  }
 }
 ```
 
