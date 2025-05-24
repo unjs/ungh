@@ -3,6 +3,7 @@ import { defineNitroConfig } from "nitropack/config";
 export default defineNitroConfig({
   runtimeConfig: {
     GH_TOKEN: process.env.GH_TOKEN,
+    GH_TOKEN2: process.env.GH_TOKEN2,
   },
   routeRules: {
     "/**": {
