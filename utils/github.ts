@@ -42,9 +42,8 @@ const ratelimitInfos = new Map<string, RatelimitInformation>();
  */
 function getGhTokenWithHighRatelimitRemaining(): string {
   const now = Math.floor(Date.now() / 1000);
-  const tokenWithRemaining = [runtimeConfig.GH_TOKEN, runtimeConfig.GH_TOKEN2]
-    .filter(Boolean)
-    .map((token) => {
+  const tokenWithRemaining = runtimeConfig.GH_TOKENS.filter(Boolean).map(
+    (token) => {
       const ratelimitInfo = ratelimitInfos.get(token);
       return {
         token,
@@ -53,7 +52,8 @@ function getGhTokenWithHighRatelimitRemaining(): string {
             ? ratelimitInfo.remaining
             : Infinity,
       };
-    });
+    },
+  );
   let candidate: { token: string; remaining: number } | undefined;
   for (const token of tokenWithRemaining) {
     if (!candidate || token.remaining > candidate.remaining) {
