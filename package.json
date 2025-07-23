@@ -12,6 +12,7 @@
     "test:types": "tsc --noEmit"
   },
   "devDependencies": {
+    "@upstash/redis": "^1.35.1",
     "eslint": "^9.31.0",
     "eslint-config-unjs": "^0.5.0",
     "nitropack": "^2.12.4",
