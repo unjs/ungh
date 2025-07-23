@@ -20,6 +20,9 @@ importers:
       nitropack:
         specifier: ^2.12.4
         version: 2.12.4(@netlify/blobs@9.1.2)(@upstash/redis@1.35.1)
+      openapi-renderer:
+        specifier: ^0.1.1
+        version: 0.1.1
       prettier:
         specifier: ^3.6.2
         version: 3.6.2
@@ -2238,6 +2241,17 @@ packages:
   open@8.4.2:
     resolution: {integrity: sha512-7x81NCL719oNbsq/3mh+hVrAWmFuEYUqrq/Iw3kUzH8ReypT9QQ0BLoJS7/G9k6N81XjW4qHWtjWwe/9eLy1EQ==}
     engines: {node: '>=12'}
+
+  openapi-renderer@0.1.1:
+    resolution: {integrity: sha512-b+qgkA5iVzJNAJvBofuxzWlRYA7ZmbMFwHEf54IcmXBbXvZqOvjnyoeesZEBC7+SpnhCwdbGwHG/i9xb2z4I+Q==}
+    peerDependencies:
+      '@kong/spec-renderer': ^1
+      '@scalar/api-reference': ^1
+    peerDependenciesMeta:
+      '@kong/spec-renderer':
+        optional: true
+      '@scalar/api-reference':
+        optional: true
 
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
@@ -5212,6 +5226,8 @@ snapshots:
       define-lazy-prop: 2.0.0
       is-docker: 2.2.1
       is-wsl: 2.2.0
+
+  openapi-renderer@0.1.1: {}
 
   optionator@0.9.4:
     dependencies:

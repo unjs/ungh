@@ -32,4 +32,15 @@ export default defineNitroConfig({
       base: "./.cache/gh",
     },
   },
+  experimental: {
+    openAPI: true,
+  },
+  openAPI: {
+    production: "runtime",
+    meta: {
+      title: "🐙 Ungh",
+      description: "Unlimited access to GitHub API",
+      version: "1.0.0",
+    },
+  },
 });
