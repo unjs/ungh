@@ -1,5 +1,25 @@
 const GH_RAW_URL = "https://raw.githubusercontent.com";
 
+defineRouteMeta({
+  openAPI: {
+    description: "Get repository readme file on main branch (not cached).",
+    parameters: [
+      {
+        name: "owner",
+        in: "path",
+        required: true,
+        schema: { type: "string", example: "unjs" },
+      },
+      {
+        name: "repo",
+        in: "path",
+        required: true,
+        schema: { type: "string", example: "ofetch" },
+      },
+    ],
+  },
+});
+
 export default cachedEventHandler(
   async (event) => {
     const repo = `${event.context.params.owner}/${event.context.params.repo}`;

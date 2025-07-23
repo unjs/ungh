@@ -1,6 +1,12 @@
 // import { hash } from "ohash";
 // import type { GithubFileData } from "~types";
 
+defineRouteMeta({
+  openAPI: {
+    description: "(disabled - redirects to raw.githubusercontent.com)",
+  },
+});
+
 export default eventHandler(async (event) => {
   const repo = `${event.context.params.owner}/${event.context.params.repo}`;
   const ref = `${event.context.params.branch}/${event.context.params.path}`;

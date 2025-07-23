@@ -1,5 +1,11 @@
 import { renderHTML } from "openapi-renderer";
 
+defineRouteMeta({
+  openAPI: {
+    description: "API documentation for Ungh.",
+  },
+});
+
 export default eventHandler(
   () =>
     renderHTML({

@@ -1,5 +1,11 @@
 import type { GithubFile } from "~types";
 
+defineRouteMeta({
+  openAPI: {
+    description: "(disabled - redirects to raw.githubusercontent.com)",
+  },
+});
+
 export default eventHandler(async (event) => {
   const repo = `${event.context.params.owner}/${event.context.params.repo}`;
   const res = await ghRepoFiles(repo, event.context.params.branch);

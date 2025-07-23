@@ -1,3 +1,18 @@
+defineRouteMeta({
+  openAPI: {
+    description:
+      "Get star information for one or more repositories or organizations. Multiple items can be separated by either , or + or (space). Each item can be either `{owner}/{org}` to specify one repository or `{owner}/*` to specify all organization repositories.",
+    parameters: [
+      {
+        name: "repos",
+        in: "path",
+        required: true,
+        schema: { type: "string", example: "unjs/ofetch+unjs/jiti" },
+      },
+    ],
+  },
+});
+
 export default eventHandler(async (event) => {
   const repoSources = await Promise.all(
     (event.context.params.repos || "").split(/[ +,]/).map(async (p) => {

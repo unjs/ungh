@@ -1,5 +1,19 @@
 import type { GithubRepo } from "~types";
 
+defineRouteMeta({
+  openAPI: {
+    description: "Get user repositories.",
+    parameters: [
+      {
+        name: "name",
+        in: "path",
+        required: true,
+        schema: { type: "string", example: "pi0" },
+      },
+    ],
+  },
+});
+
 export default eventHandler(async (event) => {
   const name = getRouterParam(event, "name");
   // TODO: Do pagination

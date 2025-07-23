@@ -1,3 +1,9 @@
+defineRouteMeta({
+  openAPI: {
+    description: "Service health check endpoint (should return 200 OK).",
+  },
+});
+
 export default eventHandler(() => {
   // const runtimeConfig = useRuntimeConfig();
   // const res = await $fetch.raw("/meta", {

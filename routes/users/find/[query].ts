@@ -1,5 +1,19 @@
 import type { GithubUser } from "~types";
 
+defineRouteMeta({
+  openAPI: {
+    description: "Get user repositories.",
+    parameters: [
+      {
+        name: "query",
+        in: "path",
+        required: true,
+        schema: { type: "string", example: "pooya@pi0.io" },
+      },
+    ],
+  },
+});
+
 const anonEmailRegex = /^(?:\d+\+)?(.+)@users.noreply.github.com$/;
 
 export default eventHandler(async (event) => {

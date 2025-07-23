@@ -1,5 +1,19 @@
 import type { GithubRepo } from "~types";
 
+defineRouteMeta({
+  openAPI: {
+    description: "GitHub organization repositories overview.",
+    parameters: [
+      {
+        name: "owner",
+        in: "path",
+        required: true,
+        schema: { type: "string", example: "unjs" },
+      },
+    ],
+  },
+});
+
 export default eventHandler(async (event) => {
   // TODO: Do pagination
   const rawRepos = await ghFetch(
