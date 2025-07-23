@@ -1,4 +1,5 @@
 import { defineNitroConfig } from "nitropack/config";
+import { provider } from "std-env";
 
 export default defineNitroConfig({
   compatibilityDate: "2025-07-23",
@@ -14,10 +15,16 @@ export default defineNitroConfig({
     "/user/find/**": { proxy: "/users/find/**" },
   },
   storage: {
-    "/cache/gh": {
-      driver: "cloudflare-kv-binding",
-      binding: "UNGH_CACHE",
-    },
+    "/cache/gh":
+      provider === "vercel"
+        ? {
+            // UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are used by default
+            driver: "upstash",
+          }
+        : {
+            driver: "cloudflare-kv-binding",
+            binding: "UNGH_CACHE",
+          },
   },
   devStorage: {
     "/cache/gh": {
