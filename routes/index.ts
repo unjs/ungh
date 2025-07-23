@@ -1,4 +1,5 @@
 import { renderHTML } from "openapi-renderer";
+import { getQuery } from "h3";
 
 defineRouteMeta({
   openAPI: {
@@ -7,9 +8,9 @@ defineRouteMeta({
 });
 
 export default eventHandler(
-  () =>
+  (event) =>
     renderHTML({
-      renderer: "scalar",
+      renderer: (getQuery(event).renderer as any) || "scalar",
       spec: "/_openapi.json",
     }) +
     /* html */ `<script> if (window.location.hash === '') { window.location.hash = '#tag/app-routes'; } </script>`,
