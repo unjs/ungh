@@ -1,6 +1,7 @@
 import { defineNitroConfig } from "nitropack/config";
 
 export default defineNitroConfig({
+  compatibilityDate: "2025-07-23",
   runtimeConfig: {
     GH_TOKEN: process.env.GH_TOKEN,
   },
