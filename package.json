@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "prepare": "nitropack prepare",
-    "build": "nitropack build",
-    "dev": "nitropack dev",
+    "prepare": "nitro prepare",
+    "build": "nitro build",
+    "dev": "nitro dev",
     "lint": "eslint . && prettier -c .",
     "lint:fix": "eslint --fix . && prettier -w .",
     "test": "pnpm lint && pnpm test:types",
@@ -14,7 +14,7 @@
   "devDependencies": {
     "eslint": "^9.31.0",
     "eslint-config-unjs": "^0.5.0",
-    "nitropack": "^2.11.13",
+    "nitropack": "^2.12.4",
     "prettier": "^3.6.2",
     "typescript": "^5.8.3"
   },
