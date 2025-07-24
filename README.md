@@ -1,6 +1,6 @@
-# 🐙 UNGH
+# 🐙 [ungh.cc](https://ungh.cc)
 
-> Unlimited access to GitHub API
+> Unlimited access to GitHub API.
 
 > [!IMPORTANT]
 >
@@ -11,15 +11,6 @@
 Accessing to open source GitHub repository meta-data should be fast, easy, and straightforward. GitHub API is rate limited and requires an authentication token to increase limits. Even by using an API token, we need to share or generate it for each deployment and local development of apps and also deal with (increased) rate limits and deployment caching. GitHub REST API is also complex with (unnecessary) bigger payloads because of backward compatibility.
 
 UNGH provides a simplified, cached, and anonymous layer to make GitHub API more enjoyable!
-
-## Roadmap
-
-- [x] Hosted MVP service (powered by cloudflare workers and KV)
-- [ ] Publish `ungh` js client to NPM ([#4](https://github.com/unjs/ungh/issues/4))
-- [ ] Implement token pool and open token donations ([#5](https://github.com/unjs/ungh/issues/5))
-- [ ] Mark API as stable
-
-**Note:** This project is still under development and API might change.
 
 ## API
 
@@ -316,8 +307,12 @@ Find one github user by email or other query.
 - Install dependencies using `pnpm install`
 - Run interactive tests using `pnpm dev`
 
+## Sponsors
+
+Hosting is sponsored by [Vercel](https://vercel.com/?utm_source=ungh).
+
 ## License
 
-Made with 💛
+Developed by [@pi0](https://github.com/pi0) and [contributors](https://github.com/unjs/ungh/graphs/contributors).
 
-Published under [MIT License](./LICENSE).
+Source code is published under the [MIT License](./LICENSE).
