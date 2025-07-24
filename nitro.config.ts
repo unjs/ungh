@@ -4,7 +4,12 @@ import { provider } from "std-env";
 export default defineNitroConfig({
   compatibilityDate: "2025-07-23",
   runtimeConfig: {
-    GH_TOKEN: process.env.GH_TOKEN,
+    GH_TOKENS: [
+      ...new Set<string>([
+        ...(process.env.GH_TOKENS ? JSON.parse(process.env.GH_TOKENS) : []),
+        ...(process.env.GH_TOKEN ? [process.env.GH_TOKEN] : []),
+      ]),
+    ],
   },
   routeRules: {
     "/**": {
