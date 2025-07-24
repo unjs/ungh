@@ -7,19 +7,17 @@ defineRouteMeta({
   },
 });
 
-export default eventHandler(
-  (event) =>
-    renderHTML({
-      renderer: (getQuery(event).renderer as any) || "scalar",
-      spec: "/_openapi.json",
-      meta: {
-        title: "🐙 ungh.cc | Unlimited access to GitHub API",
-      },
-      scalar: {
-        hideClientButton: true,
-        theme: "alternate",
-        _integration: "nitro",
-      },
-    }) +
-    /* html */ `<script> if (window.location.hash === '') { window.location.hash = '#tag/app-routes'; } </script>`,
+export default eventHandler((event) =>
+  renderHTML({
+    renderer: (getQuery(event).renderer as any) || "scalar",
+    spec: "/_openapi.json",
+    meta: {
+      title: "🐙 ungh.cc | Unlimited access to GitHub API",
+    },
+    scalar: {
+      hideClientButton: true,
+      theme: "alternate",
+      _integration: "nitro",
+    },
+  }),
 );
