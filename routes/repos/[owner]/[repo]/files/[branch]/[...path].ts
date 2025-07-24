@@ -4,6 +4,7 @@
 defineRouteMeta({
   openAPI: {
     description: "(disabled - redirects to raw.githubusercontent.com)",
+    tags: ["hidden"],
   },
 });
 

@@ -60,6 +60,9 @@ function getHandlersMeta() {
         ...openAPI,
       },
     };
+    if (item[method].tags?.includes("hidden")) {
+      continue; // Skip hidden routes
+    }
     if ($global) {
       globals = defu($global, globals);
     }
