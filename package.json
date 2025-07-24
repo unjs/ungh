@@ -15,7 +15,7 @@
     "@upstash/redis": "^1.35.1",
     "eslint": "^9.31.0",
     "eslint-config-unjs": "^0.5.0",
-    "nitropack": "^2.12.4",
+    "nitropack": "npm:nitropack-nightly@2.12.5-20250724-162330.adcd3954",
     "openapi-renderer": "^0.1.1",
     "prettier": "^3.6.2",
     "std-env": "^3.9.0",
