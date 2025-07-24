@@ -10,7 +10,7 @@ defineRouteMeta({
 export default eventHandler((event) =>
   renderHTML({
     renderer: (getQuery(event).renderer as any) || "scalar",
-    spec: "/_openapi.json",
+    spec: "/openapi.json",
     meta: {
       title: "🐙 ungh.cc | Unlimited access to GitHub API",
     },
