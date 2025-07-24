@@ -12,7 +12,7 @@ export default eventHandler((event) =>
     renderer: (getQuery(event).renderer as any) || "scalar",
     spec: "/openapi.json",
     meta: {
-      title: "🐙 ungh.cc | Unlimited access to GitHub API",
+      title: "ungh.cc | Unlimited access to GitHub API",
     },
     scalar: {
       hideClientButton: true,
