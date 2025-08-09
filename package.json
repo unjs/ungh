@@ -12,14 +12,14 @@
     "test:types": "tsc --noEmit"
   },
   "devDependencies": {
-    "@upstash/redis": "^1.35.1",
-    "eslint": "^9.31.0",
+    "@upstash/redis": "^1.35.3",
+    "eslint": "^9.33.0",
     "eslint-config-unjs": "^0.5.0",
-    "nitropack": "npm:nitropack-nightly@2.12.5-20250724-162330.adcd3954",
+    "nitropack": "npm:nitropack-nightly@2.12.5-20250726-160806.b49eb81d",
     "openapi-renderer": "^0.1.1",
     "prettier": "^3.6.2",
     "std-env": "^3.9.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.2"
   },
-  "packageManager": "pnpm@10.13.1"
+  "packageManager": "pnpm@10.14.0"
 }
