@@ -21,5 +21,8 @@
     "std-env": "^3.9.0",
     "typescript": "^5.9.2"
   },
+  "resolutions": {
+    "unstorage": "npm:unstorage-nightly@1.17.0-20250820-211137-b297dad"
+  },
   "packageManager": "pnpm@10.15.0"
 }
