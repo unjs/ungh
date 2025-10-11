@@ -24,6 +24,10 @@ export interface GithubUser {
   name: string;
   twitter: string;
   avatar: string;
+  company: string;
+  location: string;
+  blog: string;
+  email: string;
 }
 
 export interface GithubContributor {
