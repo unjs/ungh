@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  nitropack-nightly>h3: npm:h3-nightly@1.15.5-20251001-082059-b4dce71
+
 importers:
 
   .:
@@ -20,6 +23,9 @@ importers:
       nitropack:
         specifier: npm:nitropack-nightly@2.12.5-20250819-230311.89278001
         version: nitropack-nightly@2.12.5-20250819-230311.89278001(@netlify/blobs@9.1.2)(@upstash/redis@1.35.4)
+      ohash:
+        specifier: ^2.0.11
+        version: 2.0.11
       openapi-renderer:
         specifier: ^0.1.1
         version: 0.1.1

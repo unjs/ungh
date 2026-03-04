@@ -9,6 +9,8 @@ export interface GithubRepo {
   stars: number;
   watchers: number;
   forks: number;
+  issues: number;
+  pullRequests: number;
   defaultBranch: string;
 }
 

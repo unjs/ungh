@@ -1,5 +1,6 @@
 import type { CacheOptions } from "nitropack";
 import type { FetchOptions } from "ofetch";
+import { hash } from "ohash";
 
 const runtimeConfig = useRuntimeConfig();
 
@@ -142,5 +143,37 @@ export const ghMarkdown = cachedFunction(
   {
     ...cacheOptions("markdown"),
     getKey: (_markdown, repo, id) => repo + "/" + id,
+  },
+);
+
+export const ghGraphql = cachedFunction(
+  async (query: string, variables: Record<string, any> = {}) => {
+    const res = await ghFetch("/graphql", {
+      method: "POST",
+      headers: {
+        accept: "application/vnd.github+json",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        query,
+        variables,
+      }),
+    });
+
+    if (res.errors) {
+      throw createError({
+        // Hide errors in case they contain sensitive info
+        message: "GitHub GraphQL error",
+        statusCode: 500,
+      });
+    }
+
+    return res.data;
+  },
+  {
+    ...cacheOptions("graphql"),
+    getKey(query, variables) {
+      return hash(query + JSON.stringify(variables));
+    },
   },
 );
