@@ -1,4 +1,4 @@
-import type { GithubRepo } from "~types";
+import type { GithubRepoWithoutIssuesPRs } from "~types";
 
 defineRouteMeta({
   openAPI: {
@@ -22,7 +22,7 @@ export default eventHandler(async (event) => {
 
   const repos = rawRepos.map(
     (rawRepo) =>
-      <GithubRepo>{
+      <GithubRepoWithoutIssuesPRs>{
         id: rawRepo.id,
         name: rawRepo.name,
         repo: rawRepo.full_name,

@@ -14,6 +14,11 @@ export interface GithubRepo {
   defaultBranch: string;
 }
 
+export type GithubRepoWithoutIssuesPRs = Omit<
+  GithubRepo,
+  "issues" | "pullRequests"
+>;
+
 export interface GithubOrg {
   id: number;
   name: string;
