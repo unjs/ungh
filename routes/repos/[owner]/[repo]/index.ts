@@ -2,7 +2,7 @@ import type { GithubRepo } from "~types";
 
 defineRouteMeta({
   openAPI: {
-    description: "Get repository readme file on main branch (not cached).",
+    description: "Get repository info.",
     parameters: [
       {
         name: "owner",
@@ -35,6 +35,7 @@ export default eventHandler(async (event) => {
     stars: rawRepo.stargazers_count,
     watchers: rawRepo.subscribers_count,
     forks: rawRepo.forks,
+    issueAndPullCount: rawRepo.open_issues_count,
     defaultBranch: rawRepo.default_branch,
   };
 
