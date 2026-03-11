@@ -9,8 +9,15 @@ export interface GithubRepo {
   stars: number;
   watchers: number;
   forks: number;
+  issues: number;
+  pullRequests: number;
   defaultBranch: string;
 }
+
+export type GithubRepoWithoutIssuesPRs = Omit<
+  GithubRepo,
+  "issues" | "pullRequests"
+>;
 
 export interface GithubOrg {
   id: number;

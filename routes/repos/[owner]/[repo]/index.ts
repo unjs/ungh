@@ -2,7 +2,7 @@ import type { GithubRepo } from "~types";
 
 defineRouteMeta({
   openAPI: {
-    description: "Get repository readme file on main branch (not cached).",
+    description: "Get repository info.",
     parameters: [
       {
         name: "owner",
@@ -21,21 +21,55 @@ defineRouteMeta({
 });
 
 export default eventHandler(async (event) => {
-  const rawRepo = await ghRepo(
-    `${event.context.params.owner}/${event.context.params.repo}`,
+  const { repository } = await ghGraphql(
+    /* GraphQL */ `
+      query RepoInfo($owner: String!, $name: String!) {
+        repository(owner: $owner, name: $name) {
+          id
+          databaseId
+          name
+          nameWithOwner
+          description
+          createdAt
+          updatedAt
+          pushedAt
+          stargazerCount
+          watchers {
+            totalCount
+          }
+          forkCount
+          issues(states: OPEN) {
+            totalCount
+          }
+          pullRequests(states: OPEN) {
+            totalCount
+          }
+          defaultBranchRef {
+            name
+          }
+        }
+      }
+    `,
+    {
+      owner: event.context.params.owner,
+      name: event.context.params.repo,
+    },
   );
+
   const repo = <GithubRepo>{
-    id: rawRepo.id,
-    name: rawRepo.name,
-    repo: rawRepo.full_name,
-    description: rawRepo.description,
-    createdAt: rawRepo.created_at,
-    updatedAt: rawRepo.updated_at,
-    pushedAt: rawRepo.pushed_at,
-    stars: rawRepo.stargazers_count,
-    watchers: rawRepo.subscribers_count,
-    forks: rawRepo.forks,
-    defaultBranch: rawRepo.default_branch,
+    id: repository.databaseId,
+    name: repository.name,
+    repo: repository.nameWithOwner,
+    description: repository.description,
+    createdAt: repository.createdAt,
+    updatedAt: repository.updatedAt,
+    pushedAt: repository.pushedAt,
+    stars: repository.stargazerCount,
+    watchers: repository.watchers.totalCount,
+    forks: repository.forkCount,
+    issues: repository.issues.totalCount,
+    pullRequests: repository.pullRequests.totalCount,
+    defaultBranch: repository.defaultBranchRef.name,
   };
 
   return {
