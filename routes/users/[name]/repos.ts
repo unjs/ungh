@@ -32,6 +32,7 @@ export default eventHandler(async (event) => {
         stars: rawRepo.stargazers_count,
         watchers: rawRepo.watchers,
         forks: rawRepo.forks,
+        issueAndPullCount: rawRepo.open_issues_count,
         defaultBranch: rawRepo.default_branch,
       },
   );
