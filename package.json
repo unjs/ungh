@@ -18,7 +18,7 @@
     "nitropack": "npm:nitropack-nightly@2.12.5-20250819-230311.89278001",
     "openapi-renderer": "^0.1.1",
     "prettier": "^3.6.2",
-    "std-env": "^3.9.0",
+    "std-env": "^4.0.0",
     "typescript": "^5.9.3"
   },
   "packageManager": "pnpm@10.18.0"
