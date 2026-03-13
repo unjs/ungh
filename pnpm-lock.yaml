@@ -27,8 +27,8 @@ importers:
         specifier: ^3.6.2
         version: 3.6.2
       std-env:
-        specifier: ^3.9.0
-        version: 3.9.0
+        specifier: ^4.0.0
+        version: 4.0.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -1702,6 +1702,7 @@ packages:
 
   glob@10.4.5:
     resolution: {integrity: sha512-7Bv8RF0k6xjo7d4A/PxYLbUCfb6c+Vpd2/mB2yRDlew7Jb5hEXiCD9ibfO7wpk8i4sevK6DFny9h7EYbM3/sHg==}
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
     hasBin: true
 
   globals@14.0.0:
@@ -1735,8 +1736,15 @@ packages:
     resolution: {integrity: sha512-O1Ld7Dr+nqPnmGpdhzLmMTQ4vAsD+rHwMm1NLUmoUFFymBOMKxCCrtDxqdBRYXdeEPEi3SyoR4TizJLQrnKBNA==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
-  h3-nightly@1.15.5-20251001-082059-b4dce71:
-    resolution: {integrity: sha512-FEhTuoxCTTh4CnM9KNvSIKJVtFqyQIreVL9//H5E7/+9GPkQLW59x7Kcb+g561G5w+/OHQtnMlNWfivqyDvXBA==}
+  h3-nightly@2.0.0-20260309-115135-c28356e:
+    resolution: {integrity: sha512-4MHUU0KIUesa63iQi2LIh+FdrLbrcD2/0d7qjQHTX8RIXtDJG2XpQKNKT8/EG+dVDQqIqt78c7cQdH+fi0PvAw==}
+    engines: {node: '>=20.11.1'}
+    hasBin: true
+    peerDependencies:
+      crossws: ^0.4.1
+    peerDependenciesMeta:
+      crossws:
+        optional: true
 
   h3@1.15.4:
     resolution: {integrity: sha512-z5cFQWDffyOe4vQ9xIqNfCZdV4p//vy6fBnr8Q1AWnVZ0teurKMG66rLj++TKwKPUP3u7iMUvrvKaEUiQw2QWQ==}
@@ -2202,9 +2210,6 @@ packages:
   node-mock-http@1.0.2:
     resolution: {integrity: sha512-zWaamgDUdo9SSLw47we78+zYw/bDr5gH8pH7oRRs8V3KmBtu8GLgGIbV2p/gRPd3LWpEOpjQj7X1FOU3VFMJ8g==}
 
-  node-mock-http@1.0.3:
-    resolution: {integrity: sha512-jN8dK25fsfnMrVsEhluUTPkBFY+6ybu7jSB1n+ri/vOGjJxU8J9CZhpSGkHXSkFjtUhbmoncG/YG9ta5Ludqog==}
-
   node-releases@2.0.19:
     resolution: {integrity: sha512-xxOWJsBKtzAq7DY0J+DTzuz58K8e7sJbdgwkbMWQe8UYB6ekmsQ45q0M/tJDsGaZmbC+l7n57UV8Hl5tHxO9uw==}
 
@@ -2554,6 +2559,9 @@ packages:
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
 
+  rou3@0.8.1:
+    resolution: {integrity: sha512-ePa+XGk00/3HuCqrEnK3LxJW7I0SdNg6EFzKUJG73hMAdDcOUC/i/aSz7LSDwLrGr33kal/rqOGydzwl6U7zBA==}
+
   run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
 
@@ -2657,6 +2665,11 @@ packages:
   spdx-license-ids@3.0.22:
     resolution: {integrity: sha512-4PRT4nh1EImPbt2jASOKHX7PB7I+e4IWNLvkKFDxNhJlfjbYlleYQh285Z/3mPTHSAK/AvdMmw5BNNuYH8ShgQ==}
 
+  srvx@0.11.9:
+    resolution: {integrity: sha512-97wWJS6F0KTKAhDlHVmBzMvlBOp5FiNp3XrLoodIgYJpXxgG5tE9rX4Pg7s46n2shI4wtEsMATTS1+rI3/ubzA==}
+    engines: {node: '>=20.16.0'}
+    hasBin: true
+
   stack-trace@0.0.10:
     resolution: {integrity: sha512-KGzahc7puUKkzyMt+IqAep+TVNbKP+k2Lmwhub39m1AsTSkaDutx56aDCo+HLDzf/D26BIHTJWNiTG1KAJiQCg==}
 
@@ -2673,6 +2686,9 @@ packages:
 
   std-env@3.9.0:
     resolution: {integrity: sha512-UGvjygr6F6tpH7o2qyqR6QYpwraIjKSdtzyBdyytFOHmPZY917kwdwLG0RbOjWOnKmnm3PeHjaoLLMie7kPLQw==}
+
+  std-env@4.0.0:
+    resolution: {integrity: sha512-zUMPtQ/HBY3/50VbpkupYHbRroTRZJPRLvreamgErJVys0ceuzMkD44J/QjqhHjOzK42GQ3QZIeFG1OYfOtKqQ==}
 
   streamx@2.22.1:
     resolution: {integrity: sha512-znKXEBxfatz2GBNK02kRnCXjV+AA4kjZIUxeWSr3UGirZMJfTE9uiwKHobnbgxWyL/JWro8tTq+vOqAK1/qbSA==}
@@ -2736,6 +2752,7 @@ packages:
   tar@7.4.3:
     resolution: {integrity: sha512-5S7Va8hKfV7W5U6g3aYxXmlPoZVAwUMy9AOKyF2fVuZa2UD3qZjg578OrLRt8PcNN1PleVaL/5/yYATNL0ICUw==}
     engines: {node: '>=18'}
+    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   terser@5.43.1:
     resolution: {integrity: sha512-+6erLbBm0+LROX2sPXlUYx/ux5PyE9K/a92Wrt6oA+WDAoFTdpHE5tCYCI5PNzq2y8df4rA+QgHLJuR4jNymsg==}
@@ -4702,17 +4719,12 @@ snapshots:
     dependencies:
       duplexer: 0.1.2
 
-  h3-nightly@1.15.5-20251001-082059-b4dce71:
+  h3-nightly@2.0.0-20260309-115135-c28356e(crossws@0.3.5):
     dependencies:
-      cookie-es: 1.2.2
+      rou3: 0.8.1
+      srvx: 0.11.9
+    optionalDependencies:
       crossws: 0.3.5
-      defu: 6.1.4
-      destr: 2.0.5
-      iron-webcrypto: 1.2.1
-      node-mock-http: 1.0.3
-      radix3: 1.1.2
-      ufo: 1.6.1
-      uncrypto: 0.1.3
 
   h3@1.15.4:
     dependencies:
@@ -5133,7 +5145,7 @@ snapshots:
       exsolve: 1.0.7
       globby: 14.1.0
       gzip-size: 7.0.0
-      h3: h3-nightly@1.15.5-20251001-082059-b4dce71
+      h3: h3-nightly@2.0.0-20260309-115135-c28356e(crossws@0.3.5)
       hookable: 5.5.3
       httpxy: 0.1.7
       ioredis: 5.7.0
@@ -5222,8 +5234,6 @@ snapshots:
   node-gyp-build@4.8.4: {}
 
   node-mock-http@1.0.2: {}
-
-  node-mock-http@1.0.3: {}
 
   node-releases@2.0.19: {}
 
@@ -5588,6 +5598,8 @@ snapshots:
       '@rollup/rollup-win32-x64-msvc': 4.46.4
       fsevents: 2.3.3
 
+  rou3@0.8.1: {}
+
   run-parallel@1.2.0:
     dependencies:
       queue-microtask: 1.2.3
@@ -5706,6 +5718,8 @@ snapshots:
 
   spdx-license-ids@3.0.22: {}
 
+  srvx@0.11.9: {}
+
   stack-trace@0.0.10: {}
 
   standard-as-callback@2.1.0: {}
@@ -5715,6 +5729,8 @@ snapshots:
   statuses@2.0.2: {}
 
   std-env@3.9.0: {}
+
+  std-env@4.0.0: {}
 
   streamx@2.22.1:
     dependencies:
