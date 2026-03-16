@@ -16,7 +16,16 @@ export function resolveMarkdownRelativeLinks(
       if (path.startsWith("http") || path.startsWith("https")) {
         return match;
       }
-      return match.replace(path, `${cdnBaseURL}/${path.replace(/^\.\//, "")}`);
+      /**
+       * RegExp is used to avoid replacing texts in markdown links and targets only `href` and `src` attributes
+       * @example [link](./image.png) => [link](https://cdn.com/image.png)
+       * @example [./src/file.ts](./src/file.ts) => [./src/file.ts](https://cdn.com/src/file.ts)
+       * @example ./src/file.ts => https://cdn.com/src/file.ts
+       */
+      const searchRegExp = new RegExp(`(?<before>[^[])(?<url>${path})`, "g"); // [^[] matches any character except [
+      return match.replace(searchRegExp, (_, before, url) => {
+        return `${before}${cdnBaseURL}/${url.replace(/^\.\//, "")}`;
+      });
     },
   );
 }
