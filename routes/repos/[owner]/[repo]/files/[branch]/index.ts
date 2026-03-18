@@ -1,3 +1,5 @@
+import { defineRouteMeta, defineHandler } from "nitro";
+import { ghRepoFiles } from "~/utils/github";
 import type { GithubFile } from "~types";
 
 defineRouteMeta({
@@ -7,14 +9,14 @@ defineRouteMeta({
   },
 });
 
-export default eventHandler(async (event) => {
-  const repo = `${event.context.params.owner}/${event.context.params.repo}`;
-  const res = await ghRepoFiles(repo, event.context.params.branch);
+export default defineHandler(async (event) => {
+  const repo = `${event.context.params!.owner}/${event.context.params!.repo}`;
+  const res = await ghRepoFiles(repo, event.context.params!.branch as string);
 
   const files = res.tree
-    .filter((i) => i.type === "blob")
+    .filter((i: any) => i.type === "blob")
     .map(
-      (i) =>
+      (i: any) =>
         <GithubFile>{
           path: i.path,
           mode: i.mode,

@@ -1,3 +1,7 @@
+import { defineRouteMeta, defineHandler } from "nitro";
+import { getRouterParam } from "nitro/h3";
+import { ghFetch } from "~/utils/github";
+
 import type { GithubUser } from "~types";
 
 defineRouteMeta({
@@ -14,7 +18,7 @@ defineRouteMeta({
   },
 });
 
-export default eventHandler(async (event) => {
+export default defineHandler(async (event) => {
   const name = getRouterParam(event, "name");
   const user = await ghFetch(`users/${name}`);
 

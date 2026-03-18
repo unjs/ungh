@@ -1,8 +1,8 @@
-import { defineNitroConfig } from "nitropack/config";
+import { defineNitroConfig } from "nitro/config";
 import { provider } from "std-env";
 
 export default defineNitroConfig({
-  compatibilityDate: "2025-07-23",
+  serverDir: ".",
   runtimeConfig: {
     GH_TOKEN: process.env.GH_TOKEN,
   },

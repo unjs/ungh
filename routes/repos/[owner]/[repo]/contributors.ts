@@ -1,3 +1,5 @@
+import { defineRouteMeta, defineHandler } from "nitro";
+import { ghRepoContributors } from "~/utils/github";
 import type { GithubContributor } from "~types";
 
 defineRouteMeta({
@@ -20,13 +22,13 @@ defineRouteMeta({
   },
 });
 
-export default eventHandler(async (event) => {
+export default defineHandler(async (event) => {
   const res = await ghRepoContributors(
-    `${event.context.params.owner}/${event.context.params.repo}`,
+    `${event.context.params!.owner}/${event.context.params!.repo}`,
   );
 
   const contributors = res.map(
-    (i) =>
+    (i: any) =>
       <GithubContributor>{
         id: i.id,
         username: i.login,

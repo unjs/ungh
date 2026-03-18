@@ -1,18 +1,24 @@
-import type { CacheOptions } from "nitropack";
-import type { FetchOptions } from "ofetch";
+import { defineCachedFunction } from "nitro/cache";
+import { useRuntimeConfig } from "nitro/runtime-config";
+import type { CacheOptions } from "nitro/types";
+import { ofetch, type FetchOptions } from "ofetch";
+import { HTTPError } from "nitro/h3";
 
 const runtimeConfig = useRuntimeConfig();
 
-const _tokens = (runtimeConfig.GH_TOKEN || "")
+const _tokens = ((runtimeConfig.GH_TOKEN as string) || "")
   .split(",")
   .map((token) => token.trim())
   .filter(Boolean);
 
-const ghTokens = _tokens.map((token) => ({
+const ghTokens: {
+  token: string;
+  valid?: boolean;
+  remaining?: number;
+  limit?: number;
+  reset?: number;
+}[] = _tokens.map((token) => ({
   token,
-  valid: undefined as boolean,
-  remaining: undefined as number,
-  limit: undefined as number,
 }));
 
 const commonCacheOptions: CacheOptions = {
@@ -31,8 +37,8 @@ async function validateGHTokens() {
   await Promise.all(
     ghTokens.map(async (token) => {
       try {
-        const res = await $fetch.raw("/meta", {
-          baseURL: "https://api.github.com",
+        const res = await ofetch.raw("https://api.github.com/meta", {
+          ignoreResponseError: true,
           headers: {
             "User-Agent": "fetch",
             Authorization: `token ${token.token}`,
@@ -44,8 +50,20 @@ async function validateGHTokens() {
         token.limit = Number.parseInt(
           res.headers.get("x-ratelimit-limit") || "0",
         );
-        token.valid = true;
-      } catch {
+        token.valid = res.status !== 401;
+        const resetEpoch = res.headers.get("x-ratelimit-reset");
+        token.reset = resetEpoch
+          ? Number.parseInt(resetEpoch) * 1000
+          : undefined;
+        const resetInfo = token.reset
+          ? ` resets in ${formatDuration(token.reset - Date.now())}`
+          : "";
+        const resource = res.headers.get("x-ratelimit-resource") || "";
+        console.log(
+          `GitHub token ${token.valid ? "validated" : "invalid"} (${res.status}): ${token.remaining}/${token.limit}${resource ? ` [${resource}]` : ""}${resetInfo}`,
+        );
+      } catch (error) {
+        console.error("Error validating GitHub token:", error);
         token.valid = false;
         token.remaining = 0;
         token.limit = 0;
@@ -56,13 +74,13 @@ async function validateGHTokens() {
 
 function getGHToken() {
   const validTokens = ghTokens
-    .filter((token) => token.valid && token.remaining > 0)
-    .sort((a, b) => b.remaining - a.remaining);
+    .filter((token) => token.valid && (token.remaining || 0) > 0)
+    .sort((a, b) => (b.remaining || 0) - (a.remaining || 0));
   // console.log(validTokens);
   return validTokens[0];
 }
 
-export const ghFetch = cachedFunction(
+export const ghFetch = defineCachedFunction(
   async <T = any>(url: string, opts: FetchOptions = {}) => {
     let token = getGHToken();
     if (!token) {
@@ -70,23 +88,33 @@ export const ghFetch = cachedFunction(
       token = getGHToken();
     }
     if (!token) {
-      throw createError({
-        message: "No valid GitHub token available",
+      const soonestReset = ghTokens
+        .filter((t) => t.valid && t.reset)
+        .sort((a, b) => (a.reset || 0) - (b.reset || 0))[0];
+      const resetInfo = soonestReset?.reset
+        ? ` Rate limit resets in ${formatDuration(soonestReset.reset - Date.now())}.`
+        : "";
+      const invalidCount = ghTokens.filter((t) => !t.valid).length;
+      const exhaustedCount = ghTokens.filter(
+        (t) => t.valid && (t.remaining || 0) === 0,
+      ).length;
+      throw new HTTPError({
+        message: `No valid GitHub token available (${ghTokens.length} configured: ${invalidCount} invalid, ${exhaustedCount} rate-limited).${resetInfo}`,
         statusCode: 403,
       });
     }
-    return $fetch<T>(url, {
+    return ofetch<T>(url, {
       baseURL: "https://api.github.com",
-      ...opts,
+      ...(opts as any),
       method: (opts.method || "GET").toUpperCase() as any,
       headers: {
         "User-Agent": "fetch",
         Authorization: `token ${token.token}`,
         ...opts.headers,
       },
-    }).catch(async (error_) => {
+    }).catch(async (error: unknown) => {
       await validateGHTokens().catch(() => {});
-      throw error_;
+      throw error;
     });
   },
   {
@@ -106,23 +134,32 @@ export const ghFetch = cachedFunction(
   },
 );
 
-function isEmptyArray(val) {
+function isEmptyArray(val: unknown) {
   return Array.isArray(val) && val.length === 0;
 }
 
-export const ghRepo = cachedFunction((repo: string) => {
+function formatDuration(ms: number) {
+  const minutes = Math.round(ms / 60_000);
+  if (minutes < 1) return "<1m";
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const rem = minutes % 60;
+  return rem > 0 ? `${hours}h${rem}m` : `${hours}h`;
+}
+
+export const ghRepo = defineCachedFunction((repo: string) => {
   return ghFetch(`/repos/${repo}`);
 }, cacheOptions("repo"));
 
-export const ghRepoContributors = cachedFunction((repo: string) => {
+export const ghRepoContributors = defineCachedFunction((repo: string) => {
   return ghFetch(`/repos/${repo}/contributors`);
 }, cacheOptions("contributors"));
 
-export const ghRepoFiles = cachedFunction((repo: string, ref: string) => {
+export const ghRepoFiles = defineCachedFunction((repo: string, ref: string) => {
   return ghFetch(`/repos/${repo}/git/trees/${ref}?recursive=1`);
 }, cacheOptions("files"));
 
-export const ghMarkdown = cachedFunction(
+export const ghMarkdown = defineCachedFunction(
   (markdown: string, repo: string, _id: string) => {
     if (!markdown) {
       return "";

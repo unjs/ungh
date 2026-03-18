@@ -1,3 +1,5 @@
+import { defineRouteMeta, defineHandler } from "nitro";
+import { ghFetch } from "~/utils/github";
 import type { GithubOrg } from "~types";
 
 defineRouteMeta({
@@ -14,8 +16,8 @@ defineRouteMeta({
   },
 });
 
-export default eventHandler(async (event) => {
-  const org = await ghFetch(`orgs/${event.context.params.owner}`);
+export default defineHandler(async (event) => {
+  const org = await ghFetch(`orgs/${event.context.params!.owner}`);
 
   return {
     org: <GithubOrg>{

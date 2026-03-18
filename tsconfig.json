@@ -1,9 +1,9 @@
 {
-  "extends": "./.nitro/types/tsconfig.json",
+  "extends": "nitro/tsconfig",
   "compilerOptions": {
     "paths": {
-      "~types": ["./types"]
-    },
-    "skipLibCheck": true
+      "~types": ["./types/index.ts"],
+      "~/*": ["./*"]
+    }
   }
 }

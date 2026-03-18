@@ -1,3 +1,7 @@
+import { defineRouteMeta, defineHandler } from "nitro";
+import { HTTPError } from "nitro/h3";
+import { ghFetch } from "~/utils/github";
+
 import type { GithubUser } from "~types";
 
 defineRouteMeta({
@@ -16,12 +20,12 @@ defineRouteMeta({
 
 const anonEmailRegex = /^(?:\d+\+)?(.+)@users.noreply.github.com$/;
 
-export default eventHandler(async (event) => {
-  let query = event.context.params.query + "";
+export default defineHandler(async (event) => {
+  let query = event.context.params!.query + "";
 
   const anonMatch = query.match(anonEmailRegex);
   if (anonMatch) {
-    query = anonMatch[1];
+    query = anonMatch[1]!;
   }
 
   const res = await ghFetch("/search/users", {
@@ -29,7 +33,7 @@ export default eventHandler(async (event) => {
   });
 
   if (res.items.length === 0) {
-    throw createError({
+    throw new HTTPError({
       statusCode: 404,
       statusMessage: "User Not Found",
     });

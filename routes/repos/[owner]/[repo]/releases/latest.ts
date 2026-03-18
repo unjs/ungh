@@ -1,3 +1,5 @@
+import { defineRouteMeta, defineHandler } from "nitro";
+import { ghFetch, ghMarkdown } from "~/utils/github";
 import type { GithubRelease } from "~types";
 
 defineRouteMeta({
@@ -20,8 +22,8 @@ defineRouteMeta({
   },
 });
 
-export default eventHandler(async (event) => {
-  const repo = `${event.context.params.owner}/${event.context.params.repo}`;
+export default defineHandler(async (event) => {
+  const repo = `${event.context.params!.owner}/${event.context.params!.repo}`;
   const i = await ghFetch(`repos/${repo}/releases/latest`);
 
   const release: GithubRelease = {
@@ -37,7 +39,7 @@ export default eventHandler(async (event) => {
     html: await ghMarkdown(i.body, repo, "release-" + i.tag),
     assets:
       "assets" in i
-        ? i.assets.map((a) => ({
+        ? i.assets.map((a: any) => ({
             contentType: a.content_type,
             size: a.size,
             createdAt: a.created_at,

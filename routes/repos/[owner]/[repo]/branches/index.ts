@@ -1,3 +1,5 @@
+import { defineRouteMeta, defineHandler } from "nitro";
+import { ghFetch } from "~/utils/github";
 import type { GitHubBranches } from "~types";
 
 defineRouteMeta({
@@ -20,12 +22,12 @@ defineRouteMeta({
   },
 });
 
-export default eventHandler(async (event) => {
-  const repo = `${event.context.params.owner}/${event.context.params.repo}`;
+export default defineHandler(async (event) => {
+  const repo = `${event.context.params!.owner}/${event.context.params!.repo}`;
   const res = await ghFetch(`/repos/${repo}/branches`);
 
   const branches = res.map(
-    (i) =>
+    (i: any) =>
       <GitHubBranches>{
         name: i.name,
         commit: i.commit,
