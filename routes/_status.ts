@@ -11,25 +11,31 @@ defineRouteMeta({
 export default defineHandler(async () => {
   await ensureTokensValidated();
 
-  const tokens = ghTokens.map((t, i) => ({
-    index: i,
-    valid: t.valid ?? false,
-    remaining: t.remaining ?? 0,
-    limit: t.limit ?? 0,
-    reset: t.reset ? formatDuration(t.reset - Date.now()) : undefined,
-  }));
+  const tokens = ghTokens.map((t, i) => {
+    const remaining = t.remaining ?? 0;
+    const limit = t.limit ?? 0;
+    return {
+      index: i,
+      valid: t.valid ?? false,
+      used: computeUsed(remaining, limit),
+      limit,
+      reset: t.reset ? formatDuration(t.reset - Date.now()) : undefined,
+    };
+  });
 
-  const totalRemaining = tokens.reduce((sum, t) => sum + t.remaining, 0);
+  const totalUsed = tokens.reduce((sum, t) => sum + t.used, 0);
   const totalLimit = tokens.reduce((sum, t) => sum + t.limit, 0);
-  const totalPct = totalLimit > 0 ? Math.round((totalRemaining / totalLimit) * 100) : 0;
+  const totalUsedPct = computeUsedPct(totalLimit - totalUsed, totalLimit);
 
   const tokenRows = tokens
     .map((t) => {
-      const pct = t.limit > 0 ? Math.round((t.remaining / t.limit) * 100) : 0;
-      const colorClass = !t.valid ? "gray" : pct > 50 ? "green" : pct > 20 ? "yellow" : "red";
-      const exhausted = t.valid && t.remaining === 0 && t.limit > 0;
-      const label = !t.valid ? "invalid" : `${t.remaining}/${t.limit} · ${exhausted ? 100 : pct}%`;
+      const usedPct = computeUsedPct(t.limit - t.used, t.limit);
+      const colorClass = !t.valid ? "gray" : usedColorClass(usedPct);
+      const label = !t.valid
+        ? "invalid"
+        : `${t.used.toLocaleString()}/${t.limit.toLocaleString()} used · ${Math.round(usedPct)}%`;
       const resetInfo = t.reset ? ` · resets in ${t.reset}` : "";
+      const exhausted = t.valid && t.used >= t.limit && t.limit > 0;
       const statusLabel = !t.valid
         ? ' <span class="status status-invalid">invalid</span>'
         : exhausted
@@ -42,13 +48,11 @@ export default defineHandler(async () => {
           <span class="token-meta">${label}${resetInfo}</span>
         </div>
         <div class="bar-track bar-sm">
-          <div class="bar-fill ${colorClass}" style="width:${!t.valid ? 0 : exhausted ? 100 : pct}%"></div>
+          <div class="bar-fill ${colorClass}" style="width:${!t.valid ? 0 : usedPct}%"></div>
         </div>
       </div>`;
     })
     .join("");
-
-  const totalExhaustedPct = totalLimit > 0 ? 100 - totalPct : 0;
 
   return html(/* html */ `<!DOCTYPE html>
 <html lang="en">
@@ -95,11 +99,10 @@ export default defineHandler(async () => {
     <div class="card">
       <div class="card-header">
         <span class="title">Overall</span>
-        <span class="meta">${totalRemaining.toLocaleString()}/${totalLimit.toLocaleString()} (${totalPct}%) · ${tokens.filter((t) => t.valid).length}/${tokens.length} valid</span>
+        <span class="meta">${totalUsed.toLocaleString()}/${totalLimit.toLocaleString()} used (${Math.round(totalUsedPct)}%) · ${tokens.filter((t) => t.valid).length}/${tokens.length} valid</span>
       </div>
       <div class="bar-track bar-lg">
-        <div class="bar-fill green" style="width:${totalPct}%"></div>
-        <div class="bar-fill red" style="width:${totalExhaustedPct}%;opacity:${totalPct > 0 ? 0.2 : 1}"></div>
+        <div class="bar-fill ${usedColorClass(totalUsedPct)}" style="width:${totalUsedPct}%"></div>
       </div>
     </div>
 
@@ -111,3 +114,17 @@ export default defineHandler(async () => {
 </body>
 </html>`);
 });
+
+function computeUsed(remaining: number, limit: number): number {
+  return Math.max(0, limit - remaining);
+}
+
+function computeUsedPct(remaining: number, limit: number): number {
+  if (limit <= 0) return 0;
+  const used = Math.max(0, limit - remaining);
+  return Math.min(100, (used / limit) * 100);
+}
+
+function usedColorClass(usedPct: number): "green" | "yellow" | "red" {
+  return usedPct < 50 ? "green" : usedPct < 80 ? "yellow" : "red";
+}
