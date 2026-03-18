@@ -42,7 +42,7 @@ export default defineCachedHandler(
   {
     group: "gh",
     name: "readme",
-    swr: true,
+    swr: false,
     maxAge: 60 * 60 * 6, // 6 hours
     staleMaxAge: 60 * 60 * 12, // 12 hours
   },

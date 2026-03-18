@@ -10,7 +10,7 @@ export default defineNitroConfig({
   },
   routeRules: {
     "/**": {
-      cache: isProduction ? { maxAge: 60 * 60 } : undefined,
+      cache: isProduction ? { swr: false, maxAge: 60 * 60 } : undefined,
       cors: true,
     },
     "/_status": {
