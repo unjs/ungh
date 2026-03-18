@@ -1,20 +1,20 @@
 /**
- * Temporary fork from https://github.com/nitrojs/nitro/blob/v2/src/runtime/internal/routes/openapi.ts
+ * Source: https://github.com/nitrojs/nitro/blob/main/src/runtime/internal/routes/openapi.ts
+ * (temporary fork)
  */
 
-import { eventHandler, getRequestURL } from "h3";
-import { joinURL } from "ufo";
+import { defineHandler } from "nitro";
 import { defu } from "defu";
 
 // @ts-ignore
-import { handlersMeta } from "#nitro-internal-virtual/server-handlers-meta";
+import { handlersMeta } from "#nitro/virtual/routing-meta";
 
-import { useRuntimeConfig } from "nitropack/runtime";
+import { useRuntimeConfig } from "nitro/runtime-config";
 
-export default eventHandler((event) => {
-  const runtimeConfig = useRuntimeConfig(event);
-  const base = runtimeConfig.app?.baseURL;
-  const url = joinURL(getRequestURL(event).origin, base);
+const runtimeConfig = useRuntimeConfig();
+
+export default defineHandler((event) => {
+  const url = new URL("/", event.url);
   const meta = {
     title: "UNGH API",
     ...runtimeConfig.nitro?.openAPI?.meta,
@@ -40,14 +40,14 @@ export default eventHandler((event) => {
   };
 });
 function getHandlersMeta() {
-  const paths = {};
+  const paths: Record<string, any> = {};
   let globals = {};
   for (const h of handlersMeta) {
     const { route, parameters } = normalizeRoute(h.route || "");
     if (route === "/" || route.startsWith("/_") || route.endsWith(".json")) {
       continue; // Skip internal routes
     }
-    const tags = [];
+    const tags: string[] = [];
     const method = (h.method || "get").toLowerCase();
     const { $global, ...openAPI } = h.meta?.openAPI || {};
     const item = {
@@ -75,8 +75,9 @@ function getHandlersMeta() {
   return { paths, globals };
 }
 
-function normalizeRoute(_route) {
-  const parameters = [];
+function normalizeRoute(_route: string) {
+  const parameters: { name: string; in: string; required: boolean; schema: { type: string } }[] =
+    [];
   let anonymousCtr = 0;
   const route = _route
     .replace(/:(\w+)/g, (_, name) => `{${name}}`)
@@ -85,7 +86,7 @@ function normalizeRoute(_route) {
     .replace(/\/(\*\*)$/g, () => `/{*param${++anonymousCtr}}`);
   const paramMatches = route.matchAll(/{(\*?\w+)}/g);
   for (const match of paramMatches) {
-    const name = match[1];
+    const name = match[1]!;
     if (!parameters.some((p) => p.name === name)) {
       parameters.push({
         name,

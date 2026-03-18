@@ -1,5 +1,7 @@
+import { defineRouteMeta, defineHandler, html } from "nitro";
+import { getQuery } from "nitro/h3";
+
 import { renderHTML } from "openapi-renderer";
-import { getQuery } from "h3";
 
 defineRouteMeta({
   openAPI: {
@@ -7,17 +9,19 @@ defineRouteMeta({
   },
 });
 
-export default eventHandler((event) =>
-  renderHTML({
-    renderer: (getQuery(event).renderer as any) || "scalar",
-    spec: "/openapi.json",
-    meta: {
-      title: "ungh.cc | Unlimited access to GitHub API",
-    },
-    scalar: {
-      hideClientButton: true,
-      theme: "alternate",
-      _integration: "nitro",
-    },
-  }),
-);
+export default defineHandler((event) => {
+  return html(
+    renderHTML({
+      renderer: (getQuery(event).renderer as any) || "scalar",
+      spec: "/openapi.json",
+      meta: {
+        title: "ungh.cc | Unlimited access to GitHub API",
+      },
+      scalar: {
+        hideClientButton: true,
+        theme: "alternate",
+        _integration: "nitro",
+      },
+    }),
+  );
+});

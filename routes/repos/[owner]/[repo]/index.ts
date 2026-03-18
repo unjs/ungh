@@ -1,3 +1,6 @@
+import { defineRouteMeta, defineHandler } from "nitro";
+import { ghRepo } from "~/utils/github";
+
 import type { GithubRepo } from "~types";
 
 defineRouteMeta({
@@ -20,10 +23,8 @@ defineRouteMeta({
   },
 });
 
-export default eventHandler(async (event) => {
-  const rawRepo = await ghRepo(
-    `${event.context.params.owner}/${event.context.params.repo}`,
-  );
+export default defineHandler(async (event) => {
+  const rawRepo = await ghRepo(`${event.context.params!.owner}/${event.context.params!.repo}`);
   const repo = <GithubRepo>{
     id: rawRepo.id,
     name: rawRepo.name,

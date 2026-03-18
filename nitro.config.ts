@@ -1,30 +1,21 @@
-import { defineNitroConfig } from "nitropack/config";
-import { provider } from "std-env";
+import { defineNitroConfig } from "nitro/config";
+import { provider, isProduction } from "std-env";
 
 export default defineNitroConfig({
-  compatibilityDate: "2025-07-23",
+  serverDir: ".",
   runtimeConfig: {
     GH_TOKEN: process.env.GH_TOKEN,
   },
   routeRules: {
     "/**": {
-      cache: process.env.NODE_ENV === "production" ? { maxAge: 60 } : undefined,
+      cache: isProduction ? { maxAge: 60 * 60 } : undefined,
       cors: true,
     },
     // Backward compatibility for changelogen
     "/user/find/**": { proxy: "/users/find/**" },
   },
   storage: {
-    "/cache/gh":
-      provider === "vercel"
-        ? {
-            // UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are used by default
-            driver: "upstash",
-          }
-        : {
-            driver: "cloudflare-kv-binding",
-            binding: "UNGH_CACHE",
-          },
+    "/cache/gh": provider === "vercel" ? { driver: "vercel-runtime-cache" } : { driver: "memory" },
   },
   devStorage: {
     "/cache/gh": {

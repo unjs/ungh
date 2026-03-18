@@ -1,10 +1,12 @@
+import { defineRouteMeta, defineHandler } from "nitro";
+
 defineRouteMeta({
   openAPI: {
     description: "Service health check endpoint (should return 200 OK).",
   },
 });
 
-export default eventHandler(() => {
+export default defineHandler(() => {
   // const runtimeConfig = useRuntimeConfig();
   // const res = await $fetch.raw("/meta", {
   //   baseURL: "https://api.github.com",

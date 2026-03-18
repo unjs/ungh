@@ -1,3 +1,7 @@
+import { defineRouteMeta, defineHandler } from "nitro";
+import { getRouterParam } from "nitro/h3";
+import { ghFetch } from "~/utils/github";
+
 import type { GithubRepo } from "~types";
 
 defineRouteMeta({
@@ -14,13 +18,13 @@ defineRouteMeta({
   },
 });
 
-export default eventHandler(async (event) => {
+export default defineHandler(async (event) => {
   const name = getRouterParam(event, "name");
   // TODO: Do pagination
   const rawRepos = await ghFetch(`users/${name}/repos?per_page=100`);
 
   const repos = rawRepos.map(
-    (rawRepo) =>
+    (rawRepo: any) =>
       <GithubRepo>{
         id: rawRepo.id,
         name: rawRepo.name,
