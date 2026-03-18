@@ -1,10 +1,6 @@
 import { defineRouteMeta, defineHandler } from "nitro";
 import { html } from "nitro/h3";
-import {
-  ghTokens,
-  ensureTokensValidated,
-  formatDuration,
-} from "~/utils/github";
+import { ghTokens, ensureTokensValidated, formatDuration } from "~/utils/github";
 
 defineRouteMeta({
   openAPI: {
@@ -12,7 +8,7 @@ defineRouteMeta({
   },
 });
 
-export default defineHandler(async (event) => {
+export default defineHandler(async () => {
   await ensureTokensValidated();
 
   const tokens = ghTokens.map((t, i) => ({
@@ -25,23 +21,14 @@ export default defineHandler(async (event) => {
 
   const totalRemaining = tokens.reduce((sum, t) => sum + t.remaining, 0);
   const totalLimit = tokens.reduce((sum, t) => sum + t.limit, 0);
-  const totalPct =
-    totalLimit > 0 ? Math.round((totalRemaining / totalLimit) * 100) : 0;
+  const totalPct = totalLimit > 0 ? Math.round((totalRemaining / totalLimit) * 100) : 0;
 
   const tokenRows = tokens
     .map((t) => {
       const pct = t.limit > 0 ? Math.round((t.remaining / t.limit) * 100) : 0;
-      const colorClass = !t.valid
-        ? "gray"
-        : pct > 50
-          ? "green"
-          : pct > 20
-            ? "yellow"
-            : "red";
+      const colorClass = !t.valid ? "gray" : pct > 50 ? "green" : pct > 20 ? "yellow" : "red";
       const exhausted = t.valid && t.remaining === 0 && t.limit > 0;
-      const label = !t.valid
-        ? "invalid"
-        : `${t.remaining}/${t.limit} · ${pct}%`;
+      const label = !t.valid ? "invalid" : `${t.remaining}/${t.limit} · ${pct}%`;
       const resetInfo = t.reset ? ` · resets in ${t.reset}` : "";
       const statusLabel = !t.valid
         ? ' <span class="status status-invalid">invalid</span>'

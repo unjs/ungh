@@ -124,19 +124,21 @@ export const ghFetch = defineCachedFunction(
         statusCode: 403,
       });
     }
-    const res = await ofetch.raw<T>(url, {
-      baseURL: "https://api.github.com",
-      ...(opts as any),
-      method: (opts.method || "GET").toUpperCase() as any,
-      headers: {
-        "User-Agent": "fetch",
-        Authorization: `token ${token.token}`,
-        ...opts.headers,
-      },
-    }).catch(async (error: unknown) => {
-      await validateGHTokens().catch(() => {});
-      throw error;
-    });
+    const res = await ofetch
+      .raw<T>(url, {
+        baseURL: "https://api.github.com",
+        ...(opts as any),
+        method: (opts.method || "GET").toUpperCase() as any,
+        headers: {
+          "User-Agent": "fetch",
+          Authorization: `token ${token.token}`,
+          ...opts.headers,
+        },
+      })
+      .catch(async (error: unknown) => {
+        await validateGHTokens().catch(() => {});
+        throw error;
+      });
     updateTokenStatus(token, res);
     return res._data as T;
   },
