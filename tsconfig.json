@@ -1,6 +1,7 @@
 {
   "extends": "nitro/tsconfig",
   "compilerOptions": {
+    "types": ["node"],
     "paths": {
       "~types": ["./types/index.ts"],
       "~/*": ["./*"]

@@ -1,5 +1,5 @@
 import { defineNitroConfig } from "nitro/config";
-import { provider } from "std-env";
+import { provider, isProduction } from "std-env";
 
 export default defineNitroConfig({
   serverDir: ".",
@@ -8,14 +8,17 @@ export default defineNitroConfig({
   },
   routeRules: {
     "/**": {
-      cache: process.env.NODE_ENV === "production" ? { maxAge: 60 * 60 } : undefined,
+      cache: isProduction ? { maxAge: 60 * 60 } : undefined,
       cors: true,
     },
     // Backward compatibility for changelogen
     "/user/find/**": { proxy: "/users/find/**" },
   },
   storage: {
-    "/cache/gh": provider === "vercel" ? { driver: "vercel-runtime-cache" } : { driver: "memory" },
+    "/cache/gh":
+      provider === "vercel"
+        ? { driver: "vercel-runtime-cache" }
+        : { driver: "memory" },
   },
   devStorage: {
     "/cache/gh": {

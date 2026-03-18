@@ -9,8 +9,8 @@
     "preview": "nitro preview",
     "lint": "oxlint . && oxfmt --check .",
     "fmt": "oxlint --fix . && oxfmt .",
-    "test": "pnpm lint && pnpm test:types",
-    "test:types": "tsgo --noEmit"
+    "test": "pnpm lint && pnpm typecheck",
+    "typecheck": "tsgo --noEmit"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
