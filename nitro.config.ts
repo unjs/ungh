@@ -5,6 +5,9 @@ export default defineNitroConfig({
   serverDir: ".",
   runtimeConfig: {
     GH_TOKEN: process.env.GH_TOKEN,
+    GH_APP_ID: process.env.GH_APP_ID,
+    GH_APP_PRIVATE_KEY: process.env.GH_APP_PRIVATE_KEY,
+    GH_APP_INSTALLATION_ID: process.env.GH_APP_INSTALLATION_ID,
   },
   routeRules: {
     "/**": {
@@ -19,12 +22,16 @@ export default defineNitroConfig({
     "/user/find/**": { proxy: "/users/find/**" },
   },
   storage: {
-    "/cache/gh": provider === "vercel" ? { driver: "vercel-runtime-cache" } : { driver: "memory" },
+    "/cache/gh":
+      provider === "vercel"
+        ? { driver: "vercel-runtime-cache" }
+        : { driver: "memory" },
   },
   devStorage: {
     "/cache/gh": {
-      driver: "fs",
-      base: "./.cache/gh",
+      driver: "memory",
+      // driver: "fs",
+      // base: "./.cache/gh",
     },
   },
   experimental: {
