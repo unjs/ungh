@@ -144,3 +144,31 @@ export const ghMarkdown = cachedFunction(
     getKey: (_markdown, repo, id) => repo + "/" + id,
   },
 );
+
+export const ghPagination = cachedFunction(
+  async (url: string, page: number, perPage: number) => {
+    const { _data: data, headers } = await $fetch.raw(url, {
+      baseURL: "https://api.github.com",
+      query: {
+        page,
+        per_page: perPage,
+      },
+      method: "GET",
+      headers: {
+        "User-Agent": "fetch",
+        Authorization: "token " + runtimeConfig.GH_TOKEN,
+      },
+    });
+
+    return {
+      _data: data,
+      headers: {
+        Link: headers.get("Link"),
+      },
+    };
+  },
+  {
+    ...cacheOptions("pagination"),
+    getKey: (path, page, perPage) => `${path}/${page}/${perPage}`,
+  },
+);
