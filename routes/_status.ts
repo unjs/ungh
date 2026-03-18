@@ -28,7 +28,7 @@ export default defineHandler(async () => {
       const pct = t.limit > 0 ? Math.round((t.remaining / t.limit) * 100) : 0;
       const colorClass = !t.valid ? "gray" : pct > 50 ? "green" : pct > 20 ? "yellow" : "red";
       const exhausted = t.valid && t.remaining === 0 && t.limit > 0;
-      const label = !t.valid ? "invalid" : `${t.remaining}/${t.limit} · ${pct}%`;
+      const label = !t.valid ? "invalid" : `${t.remaining}/${t.limit} · ${exhausted ? 100 : pct}%`;
       const resetInfo = t.reset ? ` · resets in ${t.reset}` : "";
       const statusLabel = !t.valid
         ? ' <span class="status status-invalid">invalid</span>'
@@ -99,7 +99,7 @@ export default defineHandler(async () => {
       </div>
       <div class="bar-track bar-lg">
         <div class="bar-fill green" style="width:${totalPct}%"></div>
-        <div class="bar-fill gray" style="width:${totalExhaustedPct}%"></div>
+        <div class="bar-fill red" style="width:${totalExhaustedPct}%;opacity:${totalPct > 0 ? 0.2 : 1}"></div>
       </div>
     </div>
 
