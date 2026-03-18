@@ -7,7 +7,6 @@ export default defineNitroConfig({
     GH_TOKEN: process.env.GH_TOKEN,
     GH_APP_ID: process.env.GH_APP_ID,
     GH_APP_PRIVATE_KEY: process.env.GH_APP_PRIVATE_KEY,
-    GH_APP_INSTALLATION_ID: process.env.GH_APP_INSTALLATION_ID,
   },
   routeRules: {
     "/**": {

@@ -114,16 +114,31 @@ async function _refreshAppToken() {
     const runtimeConfig = useRuntimeConfig();
     const appId = runtimeConfig.GH_APP_ID as string;
     const privateKey = runtimeConfig.GH_APP_PRIVATE_KEY as string;
-    const installationIds = ((runtimeConfig.GH_APP_INSTALLATION_ID as string) || "")
-      .split(",")
-      .map((id) => id.trim())
-      .filter(Boolean);
-
-    if (!appId || !privateKey || installationIds.length === 0) {
+    if (!appId || !privateKey) {
       return;
     }
 
     const jwt = await _createAppJWT(appId, privateKey);
+
+    // Fetch installation IDs from the GitHub API
+    const installations = await ofetch<{ id: number }[]>(
+      "https://api.github.com/app/installations",
+      {
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+          Accept: "application/vnd.github+json",
+          "User-Agent": "fetch",
+        },
+      },
+    );
+
+    const installationIds = installations.map((i) => String(i.id));
+
+    if (installationIds.length === 0) {
+      console.log("No GitHub App installations found");
+      return;
+    }
+
     let earliestRefresh = Number.POSITIVE_INFINITY;
 
     await Promise.all(
