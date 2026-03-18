@@ -44,17 +44,11 @@ async function validateGHTokens() {
             Authorization: `token ${token.token}`,
           },
         });
-        token.remaining = Number.parseInt(
-          res.headers.get("x-ratelimit-remaining") || "0",
-        );
-        token.limit = Number.parseInt(
-          res.headers.get("x-ratelimit-limit") || "0",
-        );
+        token.remaining = Number.parseInt(res.headers.get("x-ratelimit-remaining") || "0");
+        token.limit = Number.parseInt(res.headers.get("x-ratelimit-limit") || "0");
         token.valid = res.status !== 401;
         const resetEpoch = res.headers.get("x-ratelimit-reset");
-        token.reset = resetEpoch
-          ? Number.parseInt(resetEpoch) * 1000
-          : undefined;
+        token.reset = resetEpoch ? Number.parseInt(resetEpoch) * 1000 : undefined;
         const resetInfo = token.reset
           ? ` resets in ${formatDuration(token.reset - Date.now())}`
           : "";
@@ -95,9 +89,7 @@ export const ghFetch = defineCachedFunction(
         ? ` Rate limit resets in ${formatDuration(soonestReset.reset - Date.now())}.`
         : "";
       const invalidCount = ghTokens.filter((t) => !t.valid).length;
-      const exhaustedCount = ghTokens.filter(
-        (t) => t.valid && (t.remaining || 0) === 0,
-      ).length;
+      const exhaustedCount = ghTokens.filter((t) => t.valid && (t.remaining || 0) === 0).length;
       throw new HTTPError({
         message: `No valid GitHub token available (${ghTokens.length} configured: ${invalidCount} invalid, ${exhaustedCount} rate-limited).${resetInfo}`,
         statusCode: 403,

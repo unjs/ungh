@@ -8,18 +8,14 @@ export default defineNitroConfig({
   },
   routeRules: {
     "/**": {
-      cache:
-        process.env.NODE_ENV === "production" ? { maxAge: 60 * 60 } : undefined,
+      cache: process.env.NODE_ENV === "production" ? { maxAge: 60 * 60 } : undefined,
       cors: true,
     },
     // Backward compatibility for changelogen
     "/user/find/**": { proxy: "/users/find/**" },
   },
   storage: {
-    "/cache/gh":
-      provider === "vercel"
-        ? { driver: "vercel-runtime-cache" }
-        : { driver: "memory" },
+    "/cache/gh": provider === "vercel" ? { driver: "vercel-runtime-cache" } : { driver: "memory" },
   },
   devStorage: {
     "/cache/gh": {
