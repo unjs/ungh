@@ -31,10 +31,7 @@ export function ensureTokens() {
 export function ensureTokensValidated() {
   ensureTokens();
   if (!_tokensValidatePromise) {
-    _tokensValidatePromise = Promise.all([
-      validateGHTokens(),
-      ensureAppToken(),
-    ]).then(() => {});
+    _tokensValidatePromise = Promise.all([validateGHTokens(), ensureAppToken()]).then(() => {});
   }
   return _tokensValidatePromise;
 }
@@ -152,7 +149,12 @@ async function _refreshAppToken() {
           existing.limit = undefined;
           existing.reset = undefined;
         } else {
-          ghTokens.push({ token: res.token, valid: true, _app: true, _appInstallationId: installationId });
+          ghTokens.push({
+            token: res.token,
+            valid: true,
+            _app: true,
+            _appInstallationId: installationId,
+          });
         }
 
         const expiresAt = new Date(res.expires_at).getTime();
@@ -179,9 +181,7 @@ async function _refreshAppToken() {
 export function _createAppJWT(appId: string, privateKey: string): string {
   const now = Math.floor(Date.now() / 1000);
   const header = _base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
-  const payload = _base64url(
-    JSON.stringify({ iat: now - 60, exp: now + 600, iss: appId }),
-  );
+  const payload = _base64url(JSON.stringify({ iat: now - 60, exp: now + 600, iss: appId }));
   const signature = createSign("RSA-SHA256")
     .update(`${header}.${payload}`)
     .sign(privateKey, "base64url");
