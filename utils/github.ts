@@ -11,7 +11,7 @@ const _tokens = ((runtimeConfig.GH_TOKEN as string) || "")
   .map((token) => token.trim())
   .filter(Boolean);
 
-const ghTokens: {
+export const ghTokens: {
   token: string;
   valid?: boolean;
   remaining?: number;
@@ -33,7 +33,7 @@ const cacheOptions = (name: string): CacheOptions => ({
   name,
 });
 
-async function validateGHTokens() {
+export async function validateGHTokens() {
   await Promise.all(
     ghTokens.map(async (token) => {
       try {
@@ -130,7 +130,7 @@ function isEmptyArray(val: unknown) {
   return Array.isArray(val) && val.length === 0;
 }
 
-function formatDuration(ms: number) {
+export function formatDuration(ms: number) {
   const minutes = Math.round(ms / 60_000);
   if (minutes < 1) return "<1m";
   if (minutes < 60) return `${minutes}m`;

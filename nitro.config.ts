@@ -11,11 +11,20 @@ export default defineNitroConfig({
       cache: isProduction ? { maxAge: 60 * 60 } : undefined,
       cors: true,
     },
+    "/_status": {
+      basicAuth: parseBasicAuth(process.env.STATUS_AUTH) || {
+        username: "ungh",
+        password: "",
+      },
+    },
     // Backward compatibility for changelogen
     "/user/find/**": { proxy: "/users/find/**" },
   },
   storage: {
-    "/cache/gh": provider === "vercel" ? { driver: "vercel-runtime-cache" } : { driver: "memory" },
+    "/cache/gh":
+      provider === "vercel"
+        ? { driver: "vercel-runtime-cache" }
+        : { driver: "memory" },
   },
   devStorage: {
     "/cache/gh": {
@@ -34,3 +43,9 @@ export default defineNitroConfig({
     },
   },
 });
+
+function parseBasicAuth(auth?: string) {
+  if (!auth) return undefined;
+  const [username, ...rest] = auth.split(":");
+  return { username, password: rest.join(":") };
+}
