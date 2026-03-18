@@ -12,10 +12,8 @@ export default defineNitroConfig({
       cors: true,
     },
     "/_status": {
-      basicAuth: parseBasicAuth(process.env.STATUS_AUTH) || {
-        username: "ungh",
-        password: "",
-      },
+      cache: false,
+      basicAuth: parseBasicAuth(process.env.STATUS_AUTH) || false,
     },
     // Backward compatibility for changelogen
     "/user/find/**": { proxy: "/users/find/**" },

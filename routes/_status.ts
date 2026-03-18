@@ -1,6 +1,10 @@
 import { defineRouteMeta, defineHandler } from "nitro";
 import { html } from "nitro/h3";
-import { ghTokens, validateGHTokens, formatDuration } from "~/utils/github";
+import {
+  ghTokens,
+  ensureTokensValidated,
+  formatDuration,
+} from "~/utils/github";
 
 defineRouteMeta({
   openAPI: {
@@ -9,7 +13,7 @@ defineRouteMeta({
 });
 
 export default defineHandler(async (event) => {
-  await validateGHTokens();
+  await ensureTokensValidated();
 
   const tokens = ghTokens.map((t, i) => ({
     index: i,
@@ -27,55 +31,93 @@ export default defineHandler(async (event) => {
   const tokenRows = tokens
     .map((t) => {
       const pct = t.limit > 0 ? Math.round((t.remaining / t.limit) * 100) : 0;
-      const color = !t.valid
-        ? "#888"
+      const colorClass = !t.valid
+        ? "gray"
         : pct > 50
-          ? "#22c55e"
+          ? "green"
           : pct > 20
-            ? "#eab308"
-            : "#ef4444";
-      const label = !t.valid ? "invalid" : `${t.remaining}/${t.limit}`;
-      const resetInfo = t.reset ? ` (resets in ${t.reset})` : "";
+            ? "yellow"
+            : "red";
+      const exhausted = t.valid && t.remaining === 0 && t.limit > 0;
+      const label = !t.valid
+        ? "invalid"
+        : `${t.remaining}/${t.limit} · ${pct}%`;
+      const resetInfo = t.reset ? ` · resets in ${t.reset}` : "";
+      const statusLabel = !t.valid
+        ? ' <span class="status status-invalid">invalid</span>'
+        : exhausted
+          ? ' <span class="status status-exhausted">exhausted</span>'
+          : ' <span class="status status-valid">ok</span>';
       return `
-      <div style="margin-bottom:12px">
-        <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px">
-          <span>Token #${t.index + 1} ${!t.valid ? '<span style="color:#888">(invalid)</span>' : ""}</span>
-          <span>${label}${resetInfo}</span>
+      <div class="token-row">
+        <div class="token-header">
+          <span class="token-name">Token #${t.index + 1}${statusLabel}</span>
+          <span class="token-meta">${label}${resetInfo}</span>
         </div>
-        <div style="background:#1e293b;border-radius:6px;height:20px;overflow:hidden">
-          <div style="background:${color};height:100%;width:${t.valid ? pct : 0}%;transition:width .3s;border-radius:6px"></div>
+        <div class="bar-track bar-sm">
+          <div class="bar-fill ${colorClass}" style="width:${!t.valid ? 0 : exhausted ? 100 : pct}%"></div>
         </div>
       </div>`;
     })
     .join("");
 
-  const totalColor =
-    totalPct > 50 ? "#22c55e" : totalPct > 20 ? "#eab308" : "#ef4444";
+  const totalExhaustedPct = totalLimit > 0 ? 100 - totalPct : 0;
 
-  return html(`<!DOCTYPE html>
+  return html(/* html */ `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>ungh status</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    body { padding: 48px 24px; background: #0a0a0a; color: #fafafa; font-family: -apple-system, system-ui, sans-serif; min-height: 100vh; }
+    .container { max-width: 540px; margin: 0 auto; }
+    h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
+    h2 { font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; color: #666; margin-bottom: 16px; }
+    .subtitle { color: #666; font-size: 14px; margin-top: 4px; margin-bottom: 40px; }
+    .card { background: #141414; border: 1px solid #1e1e1e; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+    .card-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+    .card-header .title { font-size: 14px; font-weight: 500; }
+    .card-header .meta { font-size: 13px; color: #888; font-variant-numeric: tabular-nums; }
+    .bar-track { background: #1e1e1e; border-radius: 4px; overflow: hidden; }
+    .bar-track.bar-lg { height: 8px; display: flex; }
+    .bar-track.bar-sm { height: 4px; }
+    .bar-fill { height: 100%; transition: width .4s ease; }
+    .bar-fill.green { background: #22c55e; }
+    .bar-fill.yellow { background: #eab308; }
+    .bar-fill.red { background: #ef4444; }
+    .bar-fill.gray { background: #333; }
+    .token-row { padding: 12px 0; border-bottom: 1px solid #1e1e1e; }
+    .token-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .token-row:first-child { padding-top: 0; }
+    .token-header { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; margin-bottom: 8px; }
+    .token-name { color: #ccc; font-variant-numeric: tabular-nums; }
+    .token-meta { color: #666; font-variant-numeric: tabular-nums; }
+    .status { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 4px; }
+    .status-valid { background: #22c55e18; color: #22c55e; }
+    .status-exhausted { background: #ef444418; color: #ef4444; }
+    .status-invalid { background: #88888818; color: #888; }
+  </style>
 </head>
-<body style="margin:0;padding:40px 20px;background:#0f172a;color:#e2e8f0;font-family:system-ui,sans-serif;min-height:100vh">
-  <div style="max-width:600px;margin:0 auto">
-    <h1 style="font-size:24px;margin:0 0 8px">ungh status</h1>
-    <p style="color:#94a3b8;margin:0 0 32px">GitHub API token rate limits</p>
+<body>
+  <div class="container">
+    <h1>ungh status</h1>
+    <p class="subtitle">GitHub API token rate limits</p>
 
-    <div style="background:#1e293b;border-radius:12px;padding:24px;margin-bottom:24px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-        <span style="font-size:16px;font-weight:600">Overall</span>
-        <span style="font-size:16px">${totalRemaining}/${totalLimit} (${tokens.filter((t) => t.valid).length}/${tokens.length} tokens valid)</span>
+    <div class="card">
+      <div class="card-header">
+        <span class="title">Overall</span>
+        <span class="meta">${totalRemaining.toLocaleString()}/${totalLimit.toLocaleString()} (${totalPct}%) · ${tokens.filter((t) => t.valid).length}/${tokens.length} valid</span>
       </div>
-      <div style="background:#0f172a;border-radius:6px;height:24px;overflow:hidden">
-        <div style="background:${totalColor};height:100%;width:${totalPct}%;transition:width .3s;border-radius:6px"></div>
+      <div class="bar-track bar-lg">
+        <div class="bar-fill green" style="width:${totalPct}%"></div>
+        <div class="bar-fill gray" style="width:${totalExhaustedPct}%"></div>
       </div>
     </div>
 
-    <div style="background:#1e293b;border-radius:12px;padding:24px">
-      <h2 style="font-size:16px;margin:0 0 16px;font-weight:600">Tokens</h2>
+    <div class="card">
+      <h2>Tokens</h2>
       ${tokenRows}
     </div>
   </div>

@@ -4,22 +4,37 @@ import type { CacheOptions } from "nitro/types";
 import { ofetch, type FetchOptions } from "ofetch";
 import { HTTPError } from "nitro/h3";
 
-const runtimeConfig = useRuntimeConfig();
-
-const _tokens = ((runtimeConfig.GH_TOKEN as string) || "")
-  .split(",")
-  .map((token) => token.trim())
-  .filter(Boolean);
-
-export const ghTokens: {
+export interface GHToken {
   token: string;
   valid?: boolean;
   remaining?: number;
   limit?: number;
   reset?: number;
-}[] = _tokens.map((token) => ({
-  token,
-}));
+}
+
+export const ghTokens: GHToken[] = [];
+
+let _tokensInitialized = false;
+let _tokensValidatePromise: Promise<void> | undefined;
+
+export function ensureTokens() {
+  if (_tokensInitialized) return;
+  _tokensInitialized = true;
+  const runtimeConfig = useRuntimeConfig();
+  const tokens = ((runtimeConfig.GH_TOKEN as string) || "")
+    .split(",")
+    .map((token) => token.trim())
+    .filter(Boolean);
+  ghTokens.push(...tokens.map((token) => ({ token })));
+}
+
+export function ensureTokensValidated() {
+  ensureTokens();
+  if (!_tokensValidatePromise) {
+    _tokensValidatePromise = validateGHTokens();
+  }
+  return _tokensValidatePromise;
+}
 
 const commonCacheOptions: CacheOptions = {
   group: "gh",
@@ -33,7 +48,16 @@ const cacheOptions = (name: string): CacheOptions => ({
   name,
 });
 
+function updateTokenStatus(token: GHToken, res: Response) {
+  token.remaining = Number.parseInt(res.headers.get("x-ratelimit-remaining") || "0");
+  token.limit = Number.parseInt(res.headers.get("x-ratelimit-limit") || "0");
+  token.valid = res.status !== 401;
+  const resetEpoch = res.headers.get("x-ratelimit-reset");
+  token.reset = resetEpoch ? Number.parseInt(resetEpoch) * 1000 : undefined;
+}
+
 export async function validateGHTokens() {
+  ensureTokens();
   await Promise.all(
     ghTokens.map(async (token) => {
       try {
@@ -44,11 +68,7 @@ export async function validateGHTokens() {
             Authorization: `token ${token.token}`,
           },
         });
-        token.remaining = Number.parseInt(res.headers.get("x-ratelimit-remaining") || "0");
-        token.limit = Number.parseInt(res.headers.get("x-ratelimit-limit") || "0");
-        token.valid = res.status !== 401;
-        const resetEpoch = res.headers.get("x-ratelimit-reset");
-        token.reset = resetEpoch ? Number.parseInt(resetEpoch) * 1000 : undefined;
+        updateTokenStatus(token, res);
         const resetInfo = token.reset
           ? ` resets in ${formatDuration(token.reset - Date.now())}`
           : "";
@@ -67,10 +87,19 @@ export async function validateGHTokens() {
 }
 
 function getGHToken() {
+  ensureTokens();
+  const now = Date.now();
+  for (const token of ghTokens) {
+    if (token.valid && token.remaining === 0 && token.reset && token.reset < now) {
+      // Reset expired — mark as available for retry
+      token.remaining = undefined;
+      token.limit = undefined;
+      token.reset = undefined;
+    }
+  }
   const validTokens = ghTokens
-    .filter((token) => token.valid && (token.remaining || 0) > 0)
-    .sort((a, b) => (b.remaining || 0) - (a.remaining || 0));
-  // console.log(validTokens);
+    .filter((token) => token.valid && (token.remaining ?? 1) > 0)
+    .sort((a, b) => (b.remaining ?? 1) - (a.remaining ?? 1));
   return validTokens[0];
 }
 
@@ -95,7 +124,7 @@ export const ghFetch = defineCachedFunction(
         statusCode: 403,
       });
     }
-    return ofetch<T>(url, {
+    const res = await ofetch.raw<T>(url, {
       baseURL: "https://api.github.com",
       ...(opts as any),
       method: (opts.method || "GET").toUpperCase() as any,
@@ -108,6 +137,8 @@ export const ghFetch = defineCachedFunction(
       await validateGHTokens().catch(() => {});
       throw error;
     });
+    updateTokenStatus(token, res);
+    return res._data as T;
   },
   {
     ...cacheOptions("api"),
