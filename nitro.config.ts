@@ -17,14 +17,8 @@ export default defineNitroConfig({
   storage: {
     "/cache/gh":
       provider === "vercel"
-        ? {
-            // UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are used by default
-            driver: "upstash",
-          }
-        : {
-            driver: "cloudflare-kv-binding",
-            binding: "UNGH_CACHE",
-          },
+        ? { driver: "vercel-runtime-cache" }
+        : { driver: "memory" },
   },
   devStorage: {
     "/cache/gh": {
