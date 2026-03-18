@@ -1,4 +1,3 @@
-import { createSign } from "node:crypto";
 import { useRuntimeConfig } from "nitro/runtime-config";
 import { ofetch } from "ofetch";
 
@@ -111,83 +110,174 @@ export function ensureAppToken() {
 }
 
 async function _refreshAppToken() {
-  const runtimeConfig = useRuntimeConfig();
-  const appId = runtimeConfig.GH_APP_ID as string;
-  const privateKey = runtimeConfig.GH_APP_PRIVATE_KEY as string;
-  const installationIds = ((runtimeConfig.GH_APP_INSTALLATION_ID as string) || "")
-    .split(",")
-    .map((id) => id.trim())
-    .filter(Boolean);
+  try {
+    const runtimeConfig = useRuntimeConfig();
+    const appId = runtimeConfig.GH_APP_ID as string;
+    const privateKey = runtimeConfig.GH_APP_PRIVATE_KEY as string;
+    const installationIds = ((runtimeConfig.GH_APP_INSTALLATION_ID as string) || "")
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean);
 
-  if (!appId || !privateKey || installationIds.length === 0) {
-    return;
-  }
+    if (!appId || !privateKey || installationIds.length === 0) {
+      return;
+    }
 
-  const jwt = _createAppJWT(appId, privateKey);
-  let earliestRefresh = Number.POSITIVE_INFINITY;
+    const jwt = await _createAppJWT(appId, privateKey);
+    let earliestRefresh = Number.POSITIVE_INFINITY;
 
-  await Promise.all(
-    installationIds.map(async (installationId) => {
-      try {
-        const res = await ofetch<{ token: string; expires_at: string }>(
-          `https://api.github.com/app/installations/${installationId}/access_tokens`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${jwt}`,
-              Accept: "application/vnd.github+json",
-              "User-Agent": "fetch",
+    await Promise.all(
+      installationIds.map(async (installationId) => {
+        try {
+          const res = await ofetch<{ token: string; expires_at: string }>(
+            `https://api.github.com/app/installations/${installationId}/access_tokens`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${jwt}`,
+                Accept: "application/vnd.github+json",
+                "User-Agent": "fetch",
+              },
             },
-          },
-        );
+          );
 
-        const existing = ghTokens.find((t) => t._appInstallationId === installationId);
-        if (existing) {
-          existing.token = res.token;
-          existing.valid = true;
-          existing.remaining = undefined;
-          existing.limit = undefined;
-          existing.reset = undefined;
-        } else {
-          ghTokens.push({
-            token: res.token,
-            valid: true,
-            _app: true,
-            _appInstallationId: installationId,
-          });
+          const existing = ghTokens.find((t) => t._appInstallationId === installationId);
+          if (existing) {
+            existing.token = res.token;
+            existing.valid = true;
+            existing.remaining = undefined;
+            existing.limit = undefined;
+            existing.reset = undefined;
+          } else {
+            ghTokens.push({
+              token: res.token,
+              valid: true,
+              _app: true,
+              _appInstallationId: installationId,
+            });
+          }
+
+          const expiresAt = new Date(res.expires_at).getTime();
+          const refreshIn = Math.max(expiresAt - Date.now() - 5 * 60_000, 60_000);
+          earliestRefresh = Math.min(earliestRefresh, refreshIn);
+
+          console.log(
+            `GitHub App token acquired for installation ${installationId} (expires ${res.expires_at})`,
+          );
+        } catch (error) {
+          console.error(
+            `Failed to get GitHub App token for installation ${installationId}:`,
+            error,
+          );
         }
+      }),
+    );
 
-        const expiresAt = new Date(res.expires_at).getTime();
-        const refreshIn = Math.max(expiresAt - Date.now() - 5 * 60_000, 60_000);
-        earliestRefresh = Math.min(earliestRefresh, refreshIn);
-
-        console.log(
-          `GitHub App token acquired for installation ${installationId} (expires ${res.expires_at})`,
-        );
-      } catch (error) {
-        console.error(`Failed to get GitHub App token for installation ${installationId}:`, error);
-      }
-    }),
-  );
-
-  // Schedule refresh based on earliest expiry
-  if (earliestRefresh < Number.POSITIVE_INFINITY) {
-    setTimeout(() => {
-      _appTokenPromise = _refreshAppToken();
-    }, earliestRefresh);
+    // Schedule refresh based on earliest expiry
+    if (earliestRefresh < Number.POSITIVE_INFINITY) {
+      setTimeout(() => {
+        _appTokenPromise = _refreshAppToken();
+      }, earliestRefresh);
+    }
+  } catch (error) {
+    console.error("Failed to initialize GitHub App tokens:", error);
   }
 }
 
-export function _createAppJWT(appId: string, privateKey: string): string {
+export async function _createAppJWT(appId: string, privateKey: string): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const header = _base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const payload = _base64url(JSON.stringify({ iat: now - 60, exp: now + 600, iss: appId }));
-  const signature = createSign("RSA-SHA256")
-    .update(`${header}.${payload}`)
-    .sign(privateKey, "base64url");
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    _pemToKeyData(privateKey),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    key,
+    new TextEncoder().encode(`${header}.${payload}`),
+  );
+  const signature = _bufferToBase64url(sig);
   return `${header}.${payload}.${signature}`;
 }
 
 export function _base64url(str: string): string {
-  return Buffer.from(str).toString("base64url");
+  return _bufferToBase64url(new TextEncoder().encode(str));
+}
+
+function _bufferToBase64url(buf: ArrayBuffer): string {
+  const bytes = new Uint8Array(buf);
+  let binary = "";
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+}
+
+function _pemToKeyData(pem: string): ArrayBuffer {
+  // Normalize literal \n from env vars to real newlines
+  const normalized = pem.replace(/\\n/g, "\n");
+  const isPkcs1 = normalized.includes("BEGIN RSA PRIVATE KEY");
+  const base64 = normalized
+    .replace(/-----BEGIN [\w ]+-----/, "")
+    .replace(/-----END [\w ]+-----/, "")
+    .replace(/\s/g, "");
+  const der = _base64ToBinary(base64);
+  // Web Crypto requires PKCS#8; GitHub App keys are PKCS#1 — wrap if needed
+  return isPkcs1 ? _pkcs1ToPkcs8(der) : der;
+}
+
+function _base64ToBinary(base64: string): ArrayBuffer {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer as ArrayBuffer;
+}
+
+// Wraps a PKCS#1 RSA private key DER in the PKCS#8 ASN.1 envelope
+function _pkcs1ToPkcs8(pkcs1: ArrayBuffer): ArrayBuffer {
+  // PKCS#8 header for RSA: SEQUENCE { version INTEGER 0, algorithm AlgorithmIdentifier { OID rsaEncryption, NULL }, privateKey OCTET STRING { <pkcs1> } }
+  const pkcs1Bytes = new Uint8Array(pkcs1);
+  // RSA OID (1.2.840.113549.1.1.1) + NULL params
+  const algorithmId = new Uint8Array([
+    0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01, 0x05, 0x00,
+  ]);
+  const version = new Uint8Array([0x02, 0x01, 0x00]); // INTEGER 0
+  const octetString = _asn1Wrap(0x04, pkcs1Bytes); // OCTET STRING wrapping PKCS#1
+  const totalLen = version.length + algorithmId.length + octetString.length;
+  const seq = _asn1Wrap(0x30, _concat(version, algorithmId, octetString), totalLen);
+  return seq.buffer as ArrayBuffer;
+}
+
+function _asn1Wrap(tag: number, content: Uint8Array, knownLen?: number): Uint8Array {
+  const len = knownLen ?? content.length;
+  const lenBytes = _asn1Length(len);
+  const result = new Uint8Array(1 + lenBytes.length + content.length);
+  result[0] = tag;
+  result.set(lenBytes, 1);
+  result.set(content, 1 + lenBytes.length);
+  return result;
+}
+
+function _asn1Length(len: number): Uint8Array {
+  if (len < 0x80) return new Uint8Array([len]);
+  if (len < 0x100) return new Uint8Array([0x81, len]);
+  if (len < 0x10000) return new Uint8Array([0x82, (len >> 8) & 0xff, len & 0xff]);
+  return new Uint8Array([0x83, (len >> 16) & 0xff, (len >> 8) & 0xff, len & 0xff]);
+}
+
+function _concat(...arrays: Uint8Array[]): Uint8Array {
+  const total = arrays.reduce((sum, a) => sum + a.length, 0);
+  const result = new Uint8Array(total);
+  let offset = 0;
+  for (const a of arrays) {
+    result.set(a, offset);
+    offset += a.length;
+  }
+  return result;
 }
