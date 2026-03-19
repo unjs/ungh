@@ -1,6 +1,6 @@
 import { definePlugin, type H3Event } from "nitro";
 import { HTTPError } from "nitro/h3";
-import { getAggregateRateLimit } from "~/utils/github_token";
+import { getAggregateRateLimit, retryAfterSeconds } from "~/utils/github_token";
 
 /** Fraction of total rate limit to reserve for high-priority requests. */
 const LOW_PRIORITY_THRESHOLD = 0.25;
@@ -20,7 +20,7 @@ export default definePlugin((nitroApp) => {
       const priority = event.req.headers.get("x-priority");
       const usedPct = (limit - remaining) / limit;
       if (priority === "low" && usedPct >= 1 - LOW_PRIORITY_THRESHOLD) {
-        const retryAfter = reset ? Math.max(1, Math.ceil((reset - Date.now()) / 1000)) : 60;
+        const retryAfter = retryAfterSeconds(reset);
         throw new HTTPError({
           statusCode: 429,
           message: `Rate limit quota low — low-priority requests are temporarily throttled. Install the GitHub App to add more quota: https://github.com/apps/ungh-app`,

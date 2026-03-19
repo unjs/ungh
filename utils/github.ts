@@ -1,7 +1,7 @@
 import { defineCachedFunction } from "nitro/cache";
 import type { CacheOptions } from "nitro/types";
 import { HTTPError } from "nitro/h3";
-import { ghTokens, acquireGHToken, formatDuration } from "~/utils/github_token";
+import { ghTokens, acquireGHToken, formatDuration, retryAfterSeconds } from "~/utils/github_token";
 
 export const commonCacheOptions: CacheOptions = {
   group: "gh",
@@ -27,13 +27,11 @@ export const ghFetch = defineCachedFunction(
         : "";
       const invalidCount = ghTokens.filter((t) => t.valid === false).length;
       const exhaustedCount = ghTokens.filter((t) => t.valid && (t.remaining || 0) === 0).length;
-      const retryAfter = soonestReset?.reset
-        ? Math.max(1, Math.ceil((soonestReset.reset - Date.now()) / 1000))
-        : undefined;
+      const retryAfter = retryAfterSeconds(soonestReset?.reset);
       throw new HTTPError({
         message: `No valid GitHub token available (${ghTokens.length} configured: ${invalidCount} invalid, ${exhaustedCount} rate-limited).${resetInfo} You can help by installing the GitHub App: https://github.com/apps/ungh-app`,
         statusCode: 429,
-        headers: retryAfter ? { "Retry-After": String(retryAfter) } : undefined,
+        headers: { "Retry-After": String(retryAfter) },
       });
     }
     const fullUrl = url.startsWith("/") ? url : `/${url}`;

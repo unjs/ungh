@@ -180,6 +180,16 @@ export function getAggregateRateLimit() {
   return { remaining: totalRemaining, limit: totalLimit, reset: soonestReset?.reset };
 }
 
+/** Max jitter (in seconds) added to Retry-After to spread out retry storms. */
+const RETRY_JITTER_MAX = 30 * 60; // 30 minutes
+
+/** Computes a Retry-After value in seconds from a reset timestamp, with ~0-30 min random jitter. */
+export function retryAfterSeconds(resetMs: number | undefined, fallback = 60): number {
+  const base = resetMs ? Math.max(1, Math.ceil((resetMs - Date.now()) / 1000)) : fallback;
+  const jitter = Math.floor(Math.random() * RETRY_JITTER_MAX);
+  return base + jitter;
+}
+
 /** Formats a duration in milliseconds to a human-readable string (e.g. `"5m"`, `"1h30m"`). */
 export function formatDuration(ms: number) {
   const minutes = Math.round(ms / 60_000);
