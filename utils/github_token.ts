@@ -28,7 +28,7 @@ export class GHToken {
     this.reset = resetEpoch ? Number.parseInt(resetEpoch) * 1000 : undefined;
   }
 
-  // NOTE: Each call consumes one API request to fetch rate limit info.
+  /** NOTE: Each call consumes one API request to fetch rate limit info. */
   async validate() {
     try {
       const res = await ofetch.raw("https://api.github.com/meta", {
