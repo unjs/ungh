@@ -1,5 +1,3 @@
-import { ofetch } from "ofetch";
-
 const REVALIDATE_INTERVAL = 60_000; // 1 min
 
 /** Represents a GitHub API token with rate limit tracking and validation. */
@@ -21,9 +19,7 @@ export class GHToken {
   }
 
   get maskedToken() {
-    return this.token.length > 8
-      ? this.token.slice(0, 4) + "***" + this.token.slice(-4)
-      : "***";
+    return this.token.length > 8 ? this.token.slice(0, 4) + "***" + this.token.slice(-4) : "***";
   }
 
   [Symbol.for("nodejs.util.inspect.custom")]() {
@@ -46,18 +42,19 @@ export class GHToken {
   }
 
   updateStatus(res: Response) {
-    this.remaining = Number.parseInt(res.headers.get("x-ratelimit-remaining") || "0");
-    this.limit = Number.parseInt(res.headers.get("x-ratelimit-limit") || "0");
     this.valid = res.status !== 401;
+    const remaining = res.headers.get("x-ratelimit-remaining");
+    const limit = res.headers.get("x-ratelimit-limit");
     const resetEpoch = res.headers.get("x-ratelimit-reset");
-    this.reset = resetEpoch ? Number.parseInt(resetEpoch) * 1000 : undefined;
+    if (remaining) this.remaining = Number.parseInt(remaining);
+    if (limit) this.limit = Number.parseInt(limit);
+    if (resetEpoch) this.reset = Number.parseInt(resetEpoch) * 1000;
   }
 
   /** NOTE: Each call consumes one API request to fetch rate limit info. */
   async validate() {
     try {
-      const res = await ofetch.raw("https://api.github.com/meta", {
-        ignoreResponseError: true,
+      const res = await fetch("https://api.github.com/meta", {
         headers: {
           "User-Agent": "fetch",
           Authorization: `token ${this.token}`,
@@ -78,8 +75,9 @@ export class GHToken {
 
   /** Returns true if this token needs revalidation */
   isStale(now = Date.now()) {
+    if (!this._lastValidated) return true;
     if (this.reset && this.reset > now) return false;
-    return !this._lastValidated || now - this._lastValidated > REVALIDATE_INTERVAL;
+    return now - this._lastValidated > REVALIDATE_INTERVAL;
   }
 
   /** Clears expired rate limit state */
@@ -99,7 +97,6 @@ export class GHToken {
 
 // --- Token registry ---
 
-
 /** All registered GitHub tokens (PAT and App-generated). */
 export const ghTokens: GHToken[] = (process.env.GH_TOKEN || "")
   .split(",")
@@ -109,11 +106,7 @@ export const ghTokens: GHToken[] = (process.env.GH_TOKEN || "")
 
 /** Validates all tokens and bootstraps App tokens. Use for status page. Idempotent (once). */
 export const ensureAllTokensValidated = idempotent(async () => {
-  await Promise.all([
-    Promise.all(ghTokens.map((t) => t.validate())),
-    ensureAppToken(),
-  ]);
-  await revalidateGHTokens();
+  await Promise.all([Promise.all(ghTokens.map((t) => t.validate())), ensureAppToken()]);
 });
 
 /** Validates tokens until one is available, then continues the rest in background. Idempotent (once). */
@@ -125,35 +118,13 @@ export const ensureTokensValidated = idempotent(async () => {
 });
 
 async function _validateUntilOneAvailable() {
-  // Race PAT validations and App token bootstrap — resolve as soon as any token is available
-  const patCount = ghTokens.length;
-  const hasAppConfig = !!(process.env.GH_APP_ID && process.env.GH_APP_PRIVATE_KEY);
-  const totalTasks = patCount + (hasAppConfig ? 1 : 0);
-
-  if (totalTasks === 0) return;
-
-  await new Promise<void>((resolve) => {
-    let resolved = false;
-    let pending = totalTasks;
-
-    const tryResolve = () => {
-      if (!resolved && getGHToken()) {
-        resolved = true;
-        resolve();
-      }
-      if (--pending === 0 && !resolved) {
-        resolve(); // All done, none available
-      }
-    };
-
-    for (const token of ghTokens) {
-      token.validate().then(tryResolve);
-    }
-
-    if (hasAppConfig) {
-      ensureAppToken().then(tryResolve);
-    }
-  });
+  const tasks = [
+    ...ghTokens.map((t) => t.validate()),
+    ...(process.env.GH_APP_ID && process.env.GH_APP_PRIVATE_KEY ? [ensureAppToken()] : []),
+  ];
+  if (tasks.length > 0) {
+    await Promise.allSettled(tasks);
+  }
 }
 
 /**
@@ -179,19 +150,22 @@ export function getGHToken() {
   for (const token of ghTokens) {
     token.clearExpiredLimits(now);
   }
-  return ghTokens
-    .filter((t) => t.available)
-    .sort((a, b) => (b.remaining ?? 1) - (a.remaining ?? 1))[0];
+  let best: GHToken | undefined;
+  for (const t of ghTokens) {
+    if (t.available && (t.remaining ?? 1) > (best?.remaining ?? 0)) {
+      best = t;
+    }
+  }
+  return best;
 }
 
 /** Ensures tokens are validated and returns the best available one. Revalidates if needed. */
 export async function acquireGHToken(): Promise<GHToken | undefined> {
   await ensureTokensValidated();
-  let token = getGHToken();
-  if (!token && (await revalidateGHTokens())) {
-    token = getGHToken();
-  }
-  return token;
+  const token = getGHToken();
+  if (token) return token;
+  await revalidateGHTokens();
+  return getGHToken();
 }
 
 /** Formats a duration in milliseconds to a human-readable string (e.g. `"5m"`, `"1h30m"`). */
@@ -206,32 +180,32 @@ export function formatDuration(ms: number) {
 
 // --- GitHub App token ---
 
-/** Bootstraps GitHub App installation tokens if App credentials are configured. Idempotent (once). */
-export const ensureAppToken = idempotent(_refreshAppToken);
+/** Bootstraps GitHub App installation tokens if App credentials are configured. Coalesced (not once). */
+export const ensureAppToken = idempotent(_refreshAppToken, { once: false });
 
 async function _refreshAppToken() {
   try {
     const appId = process.env.GH_APP_ID;
     const privateKey = process.env.GH_APP_PRIVATE_KEY;
     if (!appId || !privateKey) {
-      ensureAppToken.reset();
       return;
     }
 
     const jwt = await _createAppJWT(appId, privateKey);
 
-    const installations = await ofetch<{ id: number }[]>(
-      "https://api.github.com/app/installations",
-      {
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-          Accept: "application/vnd.github+json",
-          "User-Agent": "fetch",
-        },
+    const installationsRes = await fetch("https://api.github.com/app/installations", {
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        Accept: "application/vnd.github+json",
+        "User-Agent": "fetch",
       },
-    );
+    });
+    if (!installationsRes.ok) {
+      throw new Error(`Failed to fetch installations: ${installationsRes.status}`);
+    }
+    const installations: { id: number }[] = await installationsRes.json();
 
-    const installationIds = installations.map((i) => String(i.id));
+    const installationIds = installations.map((i: { id: number }) => String(i.id));
 
     if (installationIds.length === 0) {
       console.log("No GitHub App installations found");
@@ -241,9 +215,9 @@ async function _refreshAppToken() {
     let earliestRefresh = Number.POSITIVE_INFINITY;
 
     await Promise.all(
-      installationIds.map(async (installationId) => {
+      installationIds.map(async (installationId: string) => {
         try {
-          const res = await ofetch<{ token: string; expires_at: string }>(
+          const tokenRes = await fetch(
             `https://api.github.com/app/installations/${installationId}/access_tokens`,
             {
               method: "POST",
@@ -254,6 +228,10 @@ async function _refreshAppToken() {
               },
             },
           );
+          if (!tokenRes.ok) {
+            throw new Error(`Failed to create installation token: ${tokenRes.status}`);
+          }
+          const res: { token: string; expires_at: string } = await tokenRes.json();
 
           const existing = ghTokens.find((t) => t._appInstallationId === installationId);
           if (existing) {
@@ -262,13 +240,15 @@ async function _refreshAppToken() {
             existing.remaining = undefined;
             existing.limit = undefined;
             existing.reset = undefined;
+            await existing.validate();
           } else {
-            ghTokens.push(
-              new GHToken(res.token, {
-                app: true,
-                appInstallationId: installationId,
-              }),
-            );
+            const newToken = new GHToken(res.token, {
+              app: true,
+              appInstallationId: installationId,
+            });
+            newToken.valid = true;
+            ghTokens.push(newToken);
+            await newToken.validate();
           }
 
           const expiresAt = new Date(res.expires_at).getTime();
@@ -288,13 +268,9 @@ async function _refreshAppToken() {
     );
 
     if (earliestRefresh < Number.POSITIVE_INFINITY) {
-      setTimeout(() => {
-        ensureAppToken.reset();
-        ensureAppToken();
-      }, earliestRefresh);
+      setTimeout(() => ensureAppToken(), earliestRefresh);
     }
   } catch (error) {
-    ensureAppToken.reset();
     console.error("Failed to initialize GitHub App tokens:", error);
   }
 }
