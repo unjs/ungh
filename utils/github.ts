@@ -27,9 +27,13 @@ export const ghFetch = defineCachedFunction(
         : "";
       const invalidCount = ghTokens.filter((t) => t.valid === false).length;
       const exhaustedCount = ghTokens.filter((t) => t.valid && (t.remaining || 0) === 0).length;
+      const retryAfter = soonestReset?.reset
+        ? Math.max(1, Math.ceil((soonestReset.reset - Date.now()) / 1000))
+        : undefined;
       throw new HTTPError({
-        message: `No valid GitHub token available (${ghTokens.length} configured: ${invalidCount} invalid, ${exhaustedCount} rate-limited).${resetInfo}`,
-        statusCode: 403,
+        message: `No valid GitHub token available (${ghTokens.length} configured: ${invalidCount} invalid, ${exhaustedCount} rate-limited).${resetInfo} You can help by installing the GitHub App: https://github.com/apps/ungh-app`,
+        statusCode: 429,
+        headers: retryAfter ? { "Retry-After": String(retryAfter) } : undefined,
       });
     }
     const fullUrl = url.startsWith("/") ? url : `/${url}`;
@@ -54,6 +58,7 @@ export const ghFetch = defineCachedFunction(
   },
   {
     ...cacheOptions("api"),
+    integrity: "v1",
     validate(entry) {
       if (
         !entry.value ||

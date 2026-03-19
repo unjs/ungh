@@ -169,6 +169,17 @@ export async function acquireGHToken(): Promise<GHToken | undefined> {
   return getGHToken();
 }
 
+/** Returns aggregate rate limit stats across all tokens. */
+export function getAggregateRateLimit() {
+  const validTokens = ghTokens.filter((t) => t.valid);
+  const totalRemaining = validTokens.reduce((sum, t) => sum + (t.remaining ?? 0), 0);
+  const totalLimit = validTokens.reduce((sum, t) => sum + (t.limit ?? 0), 0);
+  const soonestReset = ghTokens
+    .filter((t) => t.valid && t.reset)
+    .sort((a, b) => (a.reset || 0) - (b.reset || 0))[0];
+  return { remaining: totalRemaining, limit: totalLimit, reset: soonestReset?.reset };
+}
+
 /** Formats a duration in milliseconds to a human-readable string (e.g. `"5m"`, `"1h30m"`). */
 export function formatDuration(ms: number) {
   const minutes = Math.round(ms / 60_000);
@@ -207,9 +218,23 @@ async function _refreshAppToken(all: boolean) {
     if (!installationsRes.ok) {
       throw new Error(`Failed to fetch installations: ${installationsRes.status}`);
     }
-    const installations: { id: number }[] = await installationsRes.json();
+    const installations: { id: number; permissions: Record<string, string> }[] =
+      await installationsRes.json();
 
-    let installationIds = installations.map((i: { id: number }) => String(i.id));
+    // Filter installations to only those with empty or read-only permissions
+    // to avoid accidental leakage through over-permissioned tokens
+    const safeInstallations = installations.filter((i) => {
+      const perms = Object.values(i.permissions || {});
+      return perms.every((p) => p === "read");
+    });
+
+    if (safeInstallations.length < installations.length) {
+      console.log(
+        `Filtered ${installations.length - safeInstallations.length} installation(s) with write permissions`,
+      );
+    }
+
+    let installationIds = safeInstallations.map((i) => String(i.id));
 
     if (installationIds.length === 0) {
       console.log("No GitHub App installations found");
