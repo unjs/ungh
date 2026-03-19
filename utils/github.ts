@@ -3,11 +3,11 @@ import type { CacheOptions } from "nitro/types";
 import { HTTPError } from "nitro/h3";
 import { ghTokens, acquireGHToken, formatDuration } from "~/utils/github_token";
 
-const commonCacheOptions: CacheOptions = {
+export const commonCacheOptions: CacheOptions = {
   group: "gh",
-  swr: false,
   maxAge: 60 * 60 * 6, // 6 hours
-  staleMaxAge: 60 * 60 * 12, // 12 hours
+  staleMaxAge: 60 * 60 * 48, // 48 hours
+  base: ["/cache", "/redis"],
 };
 
 const cacheOptions = (name: string): CacheOptions => ({

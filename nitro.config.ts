@@ -10,7 +10,7 @@ export default defineNitroConfig({
   },
   routeRules: {
     "/**": {
-      cache: isProduction ? { swr: false, maxAge: 60 * 60 } : undefined,
+      isr: isProduction ? 60 * 60 * 6 : false, // 6 hours in production, no cache in development
       cors: true,
     },
     "/_status": {
@@ -21,7 +21,8 @@ export default defineNitroConfig({
     "/user/find/**": { proxy: "/users/find/**" },
   },
   storage: {
-    "/cache/gh": provider === "vercel" ? { driver: "vercel-runtime-cache" } : { driver: "memory" },
+    "/cache": provider === "vercel" ? { driver: "vercel-runtime-cache" } : { driver: "memory" },
+    "/redis": provider === "vercel" ? { driver: "upstash" } : { driver: "memory" },
   },
   devStorage: {
     "/cache/gh": {

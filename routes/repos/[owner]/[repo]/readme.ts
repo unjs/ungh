@@ -1,6 +1,6 @@
 import { defineRouteMeta } from "nitro";
 import { defineCachedHandler } from "nitro/cache";
-import { ghRepo, ghMarkdown } from "~/utils/github";
+import { ghRepo, ghMarkdown, commonCacheOptions } from "~/utils/github";
 import { resolveMarkdownRelativeLinks } from "~/utils/markdown";
 import { serverFetch } from "nitro/app";
 
@@ -40,10 +40,7 @@ export default defineCachedHandler(
     };
   },
   {
+    ...commonCacheOptions,
     group: "gh",
-    name: "readme",
-    swr: false,
-    maxAge: 60 * 60 * 6, // 6 hours
-    staleMaxAge: 60 * 60 * 12, // 12 hours
   },
 );
