@@ -544,7 +544,6 @@ describe("ensureAllTokensValidated", () => {
   beforeEach(() => {
     fetchSpy = vi.spyOn(globalThis, "fetch");
     ghTokens.length = 0;
-    ensureAllTokensValidated.reset();
     ensureAppToken.reset();
   });
 
