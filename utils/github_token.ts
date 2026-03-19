@@ -104,10 +104,11 @@ export const ghTokens: GHToken[] = (process.env.GH_TOKEN || "")
   .filter(Boolean)
   .map((t) => new GHToken(t));
 
-/** Validates all tokens and bootstraps App tokens. Use for status page. Idempotent (once). */
-export const ensureAllTokensValidated = idempotent(async () => {
-  await Promise.all([Promise.all(ghTokens.map((t) => t.validate())), ensureAppToken()]);
-});
+/** Bootstraps all App tokens (once), then re-validates all tokens. Use for status page. */
+export async function ensureAllTokensValidated() {
+  await _ensureAllAppTokensOnce();
+  await Promise.all(ghTokens.map((t) => t.validate()));
+}
 
 /** Validates tokens until one is available, then continues the rest in background. Idempotent (once). */
 export const ensureTokensValidated = idempotent(async () => {
@@ -180,10 +181,13 @@ export function formatDuration(ms: number) {
 
 // --- GitHub App token ---
 
-/** Bootstraps GitHub App installation tokens if App credentials are configured. Coalesced (not once). */
-export const ensureAppToken = idempotent(_refreshAppToken, { once: false });
+/** Bootstraps GitHub App installation tokens (samples up to 5 random installations). Coalesced (not once). */
+export const ensureAppToken = idempotent(() => _refreshAppToken(false), { once: false });
 
-async function _refreshAppToken() {
+/** Bootstraps all GitHub App installation tokens (once). Used by the status page. */
+const _ensureAllAppTokensOnce = idempotent(() => _refreshAppToken(true));
+
+async function _refreshAppToken(all: boolean) {
   try {
     const appId = process.env.GH_APP_ID;
     const privateKey = process.env.GH_APP_PRIVATE_KEY;
@@ -205,11 +209,22 @@ async function _refreshAppToken() {
     }
     const installations: { id: number }[] = await installationsRes.json();
 
-    const installationIds = installations.map((i: { id: number }) => String(i.id));
+    let installationIds = installations.map((i: { id: number }) => String(i.id));
 
     if (installationIds.length === 0) {
       console.log("No GitHub App installations found");
       return;
+    }
+
+    // Sample up to 5 random installations unless loading all (status page)
+    if (!all && installationIds.length > 5) {
+      for (let i = installationIds.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = installationIds[i]!;
+        installationIds[i] = installationIds[j]!;
+        installationIds[j] = tmp;
+      }
+      installationIds = installationIds.slice(0, 5);
     }
 
     let earliestRefresh = Number.POSITIVE_INFINITY;
