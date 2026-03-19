@@ -1,10 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { GHToken } from "~/utils/github_token";
 
-function mockResponse(
-  status: number,
-  headers: Record<string, string> = {},
-): Response {
+function mockResponse(status: number, headers: Record<string, string> = {}): Response {
   return new Response(null, { status, headers });
 }
 
@@ -25,9 +22,7 @@ describe("GHToken", () => {
     it("parses rate limit headers from successful response", () => {
       const token = new GHToken("test-token");
       const resetEpoch = Math.floor(Date.now() / 1000) + 3600;
-      token.updateStatus(
-        mockResponse(200, rateLimitHeaders(4999, 5000, resetEpoch)),
-      );
+      token.updateStatus(mockResponse(200, rateLimitHeaders(4999, 5000, resetEpoch)));
 
       expect(token.valid).toBe(true);
       expect(token.remaining).toBe(4999);
@@ -46,9 +41,7 @@ describe("GHToken", () => {
     it("marks token valid on 403 (rate limited, not auth failure)", () => {
       const token = new GHToken("test-token");
       const resetEpoch = Math.floor(Date.now() / 1000) + 60;
-      token.updateStatus(
-        mockResponse(403, rateLimitHeaders(0, 5000, resetEpoch)),
-      );
+      token.updateStatus(mockResponse(403, rateLimitHeaders(0, 5000, resetEpoch)));
 
       expect(token.valid).toBe(true);
       expect(token.remaining).toBe(0);
@@ -94,9 +87,7 @@ describe("GHToken", () => {
     });
 
     it("marks token invalid on 401 response", async () => {
-      fetchSpy.mockResolvedValueOnce(
-        mockResponse(401, rateLimitHeaders(0, 0)),
-      );
+      fetchSpy.mockResolvedValueOnce(mockResponse(401, rateLimitHeaders(0, 0)));
 
       const token = new GHToken("bad-token");
       await token.validate();
@@ -119,9 +110,7 @@ describe("GHToken", () => {
     });
 
     it("sends authorization header", async () => {
-      fetchSpy.mockResolvedValueOnce(
-        mockResponse(200, rateLimitHeaders(5000, 5000)),
-      );
+      fetchSpy.mockResolvedValueOnce(mockResponse(200, rateLimitHeaders(5000, 5000)));
 
       const token = new GHToken("ghp_secret123");
       await token.validate();
