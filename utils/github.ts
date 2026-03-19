@@ -3,18 +3,15 @@ import type { CacheOptions } from "nitro/types";
 import { ofetch, type FetchOptions } from "ofetch";
 import { HTTPError } from "nitro/h3";
 import {
-  type GHToken,
+  GHToken,
   ghTokens,
   getGHToken,
-  updateTokenStatus,
   formatDuration,
-  ensureTokens,
   ensureTokensValidated,
   revalidateGHTokens,
 } from "~/utils/github_token";
 
-export type { GHToken };
-export { ghTokens, ensureTokens, ensureTokensValidated, formatDuration };
+export { GHToken, ghTokens, ensureTokensValidated, formatDuration };
 
 const commonCacheOptions: CacheOptions = {
   group: "gh",
@@ -58,7 +55,7 @@ export const ghFetch = defineCachedFunction(
         ...opts.headers,
       },
       onResponse({ response }) {
-        updateTokenStatus(token, response);
+        token.updateStatus(response);
       },
     });
   },

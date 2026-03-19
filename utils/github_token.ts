@@ -1,71 +1,98 @@
 import { useRuntimeConfig } from "nitro/runtime-config";
 import { ofetch } from "ofetch";
 
-export interface GHToken {
+const REVALIDATE_INTERVAL = 60_000; // 1 min
+
+export class GHToken {
   token: string;
   valid?: boolean;
   remaining?: number;
   limit?: number;
   reset?: number;
+
   _lastValidated?: number;
   _app?: boolean;
   _appInstallationId?: string;
+
+  constructor(token: string, opts?: { app?: boolean; appInstallationId?: string }) {
+    this.token = token;
+    this._app = opts?.app;
+    this._appInstallationId = opts?.appInstallationId;
+  }
+
+  updateStatus(res: Response) {
+    this.remaining = Number.parseInt(res.headers.get("x-ratelimit-remaining") || "0");
+    this.limit = Number.parseInt(res.headers.get("x-ratelimit-limit") || "0");
+    this.valid = res.status !== 401;
+    const resetEpoch = res.headers.get("x-ratelimit-reset");
+    this.reset = resetEpoch ? Number.parseInt(resetEpoch) * 1000 : undefined;
+  }
+
+  // NOTE: Each call consumes one API request to fetch rate limit info.
+  async validate() {
+    try {
+      const res = await ofetch.raw("https://api.github.com/meta", {
+        ignoreResponseError: true,
+        headers: {
+          "User-Agent": "fetch",
+          Authorization: `token ${this.token}`,
+        },
+      });
+      this.updateStatus(res);
+      this._lastValidated = Date.now();
+      const resetInfo = this.reset ? ` resets in ${formatDuration(this.reset - Date.now())}` : "";
+      const resource = res.headers.get("x-ratelimit-resource") || "";
+      console.log(
+        `GitHub token ${this.valid ? "validated" : "invalid"} (${res.status}): ${this.remaining}/${this.limit}${resource ? ` [${resource}]` : ""}${resetInfo}`,
+      );
+    } catch (error) {
+      // Preserve last-known token state on transport errors (DNS/TLS/timeout)
+      console.error("Error validating GitHub token:", error);
+    }
+  }
+
+  /** Returns true if this token needs revalidation */
+  isStale(now = Date.now()) {
+    if (this.reset && this.reset > now) return false;
+    return !this._lastValidated || now - this._lastValidated > REVALIDATE_INTERVAL;
+  }
+
+  /** Clears expired rate limit state */
+  clearExpiredLimits(now = Date.now()) {
+    if (this.valid && this.remaining === 0 && this.reset && this.reset < now) {
+      this.remaining = undefined;
+      this.limit = undefined;
+      this.reset = undefined;
+    }
+  }
+
+  /** Whether this token is usable for requests */
+  get available() {
+    return this.valid && (this.remaining ?? 1) > 0;
+  }
 }
 
-export const ghTokens: GHToken[] = [];
+// --- Token registry ---
 
-let _tokensInitialized = false;
-let _tokensValidatePromise: Promise<void> | undefined;
+const runtimeConfig = useRuntimeConfig();
 
-export function ensureTokens() {
-  if (_tokensInitialized) return;
-  _tokensInitialized = true;
-  const runtimeConfig = useRuntimeConfig();
-  const tokens = ((runtimeConfig.GH_TOKEN as string) || "")
-    .split(",")
-    .map((token) => token.trim())
-    .filter(Boolean);
-  ghTokens.push(...tokens.map((token) => ({ token })));
-}
+export const ghTokens: GHToken[] = ((runtimeConfig.GH_TOKEN as string) || "")
+  .split(",")
+  .map((t) => t.trim())
+  .filter(Boolean)
+  .map((t) => new GHToken(t));
+
+let _validatePromise: Promise<void> | undefined;
 
 export function ensureTokensValidated() {
-  ensureTokens();
-  if (!_tokensValidatePromise) {
-    _tokensValidatePromise = Promise.all([validateGHTokens(), ensureAppToken()]).then(() => {});
+  if (!_validatePromise) {
+    _validatePromise = Promise.all([
+      Promise.all(ghTokens.map((t) => t.validate())),
+      _ensureAppToken(),
+    ]).then(() => {});
   }
-  return _tokensValidatePromise;
+  return _validatePromise;
 }
-
-// NOTE: Each call consumes one API request per token to fetch rate limit info.
-// Call this sparingly.
-async function validateGHToken(token: GHToken) {
-  try {
-    const res = await ofetch.raw("https://api.github.com/meta", {
-      ignoreResponseError: true,
-      headers: {
-        "User-Agent": "fetch",
-        Authorization: `token ${token.token}`,
-      },
-    });
-    updateTokenStatus(token, res);
-    token._lastValidated = Date.now();
-    const resetInfo = token.reset ? ` resets in ${formatDuration(token.reset - Date.now())}` : "";
-    const resource = res.headers.get("x-ratelimit-resource") || "";
-    console.log(
-      `GitHub token ${token.valid ? "validated" : "invalid"} (${res.status}): ${token.remaining}/${token.limit}${resource ? ` [${resource}]` : ""}${resetInfo}`,
-    );
-  } catch (error) {
-    // Preserve last-known token state on transport errors (DNS/TLS/timeout)
-    console.error("Error validating GitHub token:", error);
-  }
-}
-
-async function validateGHTokens() {
-  ensureTokens();
-  await Promise.all(ghTokens.map((token) => validateGHToken(token)));
-}
-
-const REVALIDATE_INTERVAL = 60_000; // 1 min
 
 let _revalidatePromise: Promise<boolean> | undefined;
 
@@ -85,42 +112,23 @@ export function revalidateGHTokens() {
 }
 
 async function _doRevalidateGHTokens() {
-  ensureTokens();
   const now = Date.now();
-  const staleTokens = ghTokens.filter(
-    (t) =>
-      (!t._lastValidated || now - t._lastValidated > REVALIDATE_INTERVAL) &&
-      (!t.reset || t.reset <= now),
-  );
+  const staleTokens = ghTokens.filter((t) => t.isStale(now));
   if (staleTokens.length === 0) {
     return false;
   }
-  await Promise.all(staleTokens.map((token) => validateGHToken(token)));
+  await Promise.all(staleTokens.map((t) => t.validate()));
   return true;
 }
 
 export function getGHToken() {
-  ensureTokens();
   const now = Date.now();
   for (const token of ghTokens) {
-    if (token.valid && token.remaining === 0 && token.reset && token.reset < now) {
-      token.remaining = undefined;
-      token.limit = undefined;
-      token.reset = undefined;
-    }
+    token.clearExpiredLimits(now);
   }
-  const validTokens = ghTokens
-    .filter((token) => token.valid && (token.remaining ?? 1) > 0)
-    .sort((a, b) => (b.remaining ?? 1) - (a.remaining ?? 1));
-  return validTokens[0];
-}
-
-export function updateTokenStatus(token: GHToken, res: Response) {
-  token.remaining = Number.parseInt(res.headers.get("x-ratelimit-remaining") || "0");
-  token.limit = Number.parseInt(res.headers.get("x-ratelimit-limit") || "0");
-  token.valid = res.status !== 401;
-  const resetEpoch = res.headers.get("x-ratelimit-reset");
-  token.reset = resetEpoch ? Number.parseInt(resetEpoch) * 1000 : undefined;
+  return ghTokens
+    .filter((t) => t.available)
+    .sort((a, b) => (b.remaining ?? 1) - (a.remaining ?? 1))[0];
 }
 
 export function formatDuration(ms: number) {
@@ -136,7 +144,7 @@ export function formatDuration(ms: number) {
 
 let _appTokenPromise: Promise<void> | undefined;
 
-export function ensureAppToken() {
+function _ensureAppToken() {
   if (!_appTokenPromise) {
     _appTokenPromise = _refreshAppToken();
   }
@@ -145,7 +153,6 @@ export function ensureAppToken() {
 
 async function _refreshAppToken() {
   try {
-    const runtimeConfig = useRuntimeConfig();
     const appId = runtimeConfig.GH_APP_ID as string;
     const privateKey = runtimeConfig.GH_APP_PRIVATE_KEY as string;
     if (!appId || !privateKey) {
@@ -154,7 +161,6 @@ async function _refreshAppToken() {
 
     const jwt = await _createAppJWT(appId, privateKey);
 
-    // Fetch installation IDs from the GitHub API
     const installations = await ofetch<{ id: number }[]>(
       "https://api.github.com/app/installations",
       {
@@ -198,12 +204,12 @@ async function _refreshAppToken() {
             existing.limit = undefined;
             existing.reset = undefined;
           } else {
-            ghTokens.push({
-              token: res.token,
-              valid: true,
-              _app: true,
-              _appInstallationId: installationId,
-            });
+            ghTokens.push(
+              new GHToken(res.token, {
+                app: true,
+                appInstallationId: installationId,
+              }),
+            );
           }
 
           const expiresAt = new Date(res.expires_at).getTime();
@@ -222,7 +228,6 @@ async function _refreshAppToken() {
       }),
     );
 
-    // Schedule refresh based on earliest expiry
     if (earliestRefresh < Number.POSITIVE_INFINITY) {
       setTimeout(() => {
         _appTokenPromise = _refreshAppToken();
@@ -257,7 +262,7 @@ export function _base64url(str: string): string {
   return _bufferToBase64url(new TextEncoder().encode(str));
 }
 
-function _bufferToBase64url(buf: ArrayBuffer): string {
+function _bufferToBase64url(buf: ArrayBuffer | Uint8Array): string {
   const bytes = new Uint8Array(buf);
   let binary = "";
   for (const byte of bytes) {
@@ -267,7 +272,6 @@ function _bufferToBase64url(buf: ArrayBuffer): string {
 }
 
 function _pemToKeyData(pem: string): ArrayBuffer {
-  // Normalize literal \n from env vars to real newlines
   const normalized = pem.replace(/\\n/g, "\n");
   const isPkcs1 = normalized.includes("BEGIN RSA PRIVATE KEY");
   const base64 = normalized
@@ -275,7 +279,6 @@ function _pemToKeyData(pem: string): ArrayBuffer {
     .replace(/-----END [\w ]+-----/, "")
     .replace(/\s/g, "");
   const der = _base64ToBinary(base64);
-  // Web Crypto requires PKCS#8; GitHub App keys are PKCS#1 — wrap if needed
   return isPkcs1 ? _pkcs1ToPkcs8(der) : der;
 }
 
@@ -288,16 +291,13 @@ function _base64ToBinary(base64: string): ArrayBuffer {
   return bytes.buffer as ArrayBuffer;
 }
 
-// Wraps a PKCS#1 RSA private key DER in the PKCS#8 ASN.1 envelope
 function _pkcs1ToPkcs8(pkcs1: ArrayBuffer): ArrayBuffer {
-  // PKCS#8 header for RSA: SEQUENCE { version INTEGER 0, algorithm AlgorithmIdentifier { OID rsaEncryption, NULL }, privateKey OCTET STRING { <pkcs1> } }
   const pkcs1Bytes = new Uint8Array(pkcs1);
-  // RSA OID (1.2.840.113549.1.1.1) + NULL params
   const algorithmId = new Uint8Array([
     0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01, 0x05, 0x00,
   ]);
-  const version = new Uint8Array([0x02, 0x01, 0x00]); // INTEGER 0
-  const octetString = _asn1Wrap(0x04, pkcs1Bytes); // OCTET STRING wrapping PKCS#1
+  const version = new Uint8Array([0x02, 0x01, 0x00]);
+  const octetString = _asn1Wrap(0x04, pkcs1Bytes);
   const totalLen = version.length + algorithmId.length + octetString.length;
   const seq = _asn1Wrap(0x30, _concat(version, algorithmId, octetString), totalLen);
   return seq.buffer as ArrayBuffer;
