@@ -59,7 +59,7 @@ export class GHToken {
 
   /** Clears expired rate limit state */
   clearExpiredLimits(now = Date.now()) {
-    if (this.valid && this.remaining === 0 && this.reset && this.reset < now) {
+    if (this.valid !== false && this.remaining === 0 && this.reset && this.reset < now) {
       this.remaining = undefined;
       this.limit = undefined;
       this.reset = undefined;
@@ -84,14 +84,15 @@ export const ghTokens: GHToken[] = ((runtimeConfig.GH_TOKEN as string) || "")
 
 let _validatePromise: Promise<void> | undefined;
 
-export function ensureTokensValidated() {
+export async function ensureTokensValidated() {
   if (!_validatePromise) {
     _validatePromise = Promise.all([
       Promise.all(ghTokens.map((t) => t.validate())),
       _ensureAppToken(),
     ]).then(() => {});
   }
-  return _validatePromise;
+  await _validatePromise;
+  await revalidateGHTokens();
 }
 
 let _revalidatePromise: Promise<boolean> | undefined;
@@ -156,6 +157,7 @@ async function _refreshAppToken() {
     const appId = runtimeConfig.GH_APP_ID as string;
     const privateKey = runtimeConfig.GH_APP_PRIVATE_KEY as string;
     if (!appId || !privateKey) {
+      _appTokenPromise = undefined;
       return;
     }
 
@@ -234,6 +236,7 @@ async function _refreshAppToken() {
       }, earliestRefresh);
     }
   } catch (error) {
+    _appTokenPromise = undefined;
     console.error("Failed to initialize GitHub App tokens:", error);
   }
 }
