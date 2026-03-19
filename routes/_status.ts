@@ -1,5 +1,4 @@
 import { defineRouteMeta, defineHandler } from "nitro";
-import { serverFetch } from "nitro/app";
 import { html } from "nitro/h3";
 import { ghTokens, ensureAllTokensValidated, formatDuration } from "~/utils/github_token";
 
@@ -10,10 +9,7 @@ defineRouteMeta({
 });
 
 export default defineHandler(async () => {
-  const [, thanksSvg] = await Promise.all([
-    ensureAllTokensValidated(),
-    serverFetch("/_thanks").then((r) => r.text()),
-  ]);
+  await ensureAllTokensValidated();
 
   const tokens = ghTokens.map((t, i) => {
     const remaining = t.remaining ?? 0;
