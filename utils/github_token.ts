@@ -88,7 +88,9 @@ async function _doRevalidateGHTokens() {
   ensureTokens();
   const now = Date.now();
   const staleTokens = ghTokens.filter(
-    (t) => !t._lastValidated || now - t._lastValidated > REVALIDATE_INTERVAL,
+    (t) =>
+      (!t._lastValidated || now - t._lastValidated > REVALIDATE_INTERVAL) &&
+      (!t.reset || t.reset <= now),
   );
   if (staleTokens.length === 0) {
     return false;
