@@ -8,10 +8,11 @@ import {
   getGHToken,
   formatDuration,
   ensureTokensValidated,
+  ensureAllTokensValidated,
   revalidateGHTokens,
 } from "~/utils/github_token";
 
-export { GHToken, ghTokens, ensureTokensValidated, formatDuration };
+export { GHToken, ghTokens, ensureTokensValidated, ensureAllTokensValidated, formatDuration };
 
 const commonCacheOptions: CacheOptions = {
   group: "gh",

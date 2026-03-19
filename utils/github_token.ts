@@ -86,16 +86,61 @@ export const ghTokens: GHToken[] = ((runtimeConfig.GH_TOKEN as string) || "")
 
 let _validatePromise: Promise<void> | undefined;
 
-/** Validates all tokens and bootstraps App tokens on first call. Idempotent. */
-export async function ensureTokensValidated() {
-  if (!_validatePromise) {
-    _validatePromise = Promise.all([
+/** Validates all tokens and bootstraps App tokens. Use for status page. Idempotent. */
+export async function ensureAllTokensValidated() {
+  if (!_validateAllPromise) {
+    _validateAllPromise = Promise.all([
       Promise.all(ghTokens.map((t) => t.validate())),
       ensureAppToken(),
     ]).then(() => {});
   }
-  await _validatePromise;
+  await _validateAllPromise;
   await revalidateGHTokens();
+}
+
+let _validateAllPromise: Promise<void> | undefined;
+
+/** Validates tokens until one is available, then continues the rest in background. Idempotent. */
+export async function ensureTokensValidated() {
+  if (!_validatePromise) {
+    _validatePromise = _validateUntilOneAvailable();
+  }
+  await _validatePromise;
+  if (!getGHToken()) {
+    await revalidateGHTokens();
+  }
+}
+
+async function _validateUntilOneAvailable() {
+  // Race PAT validations and App token bootstrap — resolve as soon as any token is available
+  const patCount = ghTokens.length;
+  const hasAppConfig = !!(runtimeConfig.GH_APP_ID && runtimeConfig.GH_APP_PRIVATE_KEY);
+  const totalTasks = patCount + (hasAppConfig ? 1 : 0);
+
+  if (totalTasks === 0) return;
+
+  await new Promise<void>((resolve) => {
+    let resolved = false;
+    let pending = totalTasks;
+
+    const tryResolve = () => {
+      if (!resolved && getGHToken()) {
+        resolved = true;
+        resolve();
+      }
+      if (--pending === 0 && !resolved) {
+        resolve(); // All done, none available
+      }
+    };
+
+    for (const token of ghTokens) {
+      token.validate().then(tryResolve);
+    }
+
+    if (hasAppConfig) {
+      ensureAppToken().then(tryResolve);
+    }
+  });
 }
 
 let _revalidatePromise: Promise<boolean> | undefined;
