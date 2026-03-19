@@ -60,6 +60,9 @@ export const ghFetch = defineCachedFunction(
       onResponse({ response }) {
         updateTokenStatus(token, response);
       },
+      onResponseError() {
+        revalidateGHTokens();
+      },
     });
   },
   {
