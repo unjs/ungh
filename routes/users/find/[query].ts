@@ -28,9 +28,7 @@ export default defineHandler(async (event) => {
     query = anonMatch[1]!;
   }
 
-  const res = await ghFetch("/search/users", {
-    params: { q: query },
-  });
+  const res = await ghFetch(`/search/users?q=${encodeURIComponent(query)}`);
 
   if (res.items.length === 0) {
     throw new HTTPError({

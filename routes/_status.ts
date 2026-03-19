@@ -1,6 +1,6 @@
 import { defineRouteMeta, defineHandler } from "nitro";
 import { html } from "nitro/h3";
-import { ghTokens, ensureAllTokensValidated, formatDuration } from "~/utils/github";
+import { ghTokens, ensureAllTokensValidated, formatDuration } from "~/utils/github_token";
 
 defineRouteMeta({
   openAPI: {

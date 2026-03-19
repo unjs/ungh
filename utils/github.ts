@@ -1,16 +1,7 @@
 import { defineCachedFunction } from "nitro/cache";
 import type { CacheOptions } from "nitro/types";
-import { ofetch, type FetchOptions } from "ofetch";
 import { HTTPError } from "nitro/h3";
-import {
-  GHToken,
-  ghTokens,
-  acquireGHToken,
-  formatDuration,
-  ensureAllTokensValidated,
-} from "~/utils/github_token";
-
-export { GHToken, ghTokens, ensureAllTokensValidated, formatDuration };
+import { ghTokens, acquireGHToken, formatDuration } from "~/utils/github_token";
 
 const commonCacheOptions: CacheOptions = {
   group: "gh",
@@ -25,7 +16,7 @@ const cacheOptions = (name: string): CacheOptions => ({
 });
 
 export const ghFetch = defineCachedFunction(
-  async <T = any>(url: string, opts: FetchOptions = {}) => {
+  async <T = any>(url: string, opts: RequestInit = {}) => {
     const token = await acquireGHToken();
     if (!token) {
       const soonestReset = ghTokens
@@ -34,30 +25,35 @@ export const ghFetch = defineCachedFunction(
       const resetInfo = soonestReset?.reset
         ? ` Rate limit resets in ${formatDuration(soonestReset.reset - Date.now())}.`
         : "";
-      const invalidCount = ghTokens.filter((t) => !t.valid).length;
+      const invalidCount = ghTokens.filter((t) => t.valid === false).length;
       const exhaustedCount = ghTokens.filter((t) => t.valid && (t.remaining || 0) === 0).length;
       throw new HTTPError({
         message: `No valid GitHub token available (${ghTokens.length} configured: ${invalidCount} invalid, ${exhaustedCount} rate-limited).${resetInfo}`,
         statusCode: 403,
       });
     }
-    return ofetch<T>(url, {
-      baseURL: "https://api.github.com",
-      ...(opts as any),
-      method: (opts.method || "GET").toUpperCase() as any,
+    const fullUrl = url.startsWith("/") ? url : `/${url}`;
+    const res = await fetch(`https://api.github.com${fullUrl}`, {
+      ...opts,
+      method: (opts.method || "GET").toUpperCase(),
       headers: {
         "User-Agent": "fetch",
         Authorization: `token ${token.token}`,
         ...opts.headers,
       },
-      onResponse({ response }) {
-        token.updateStatus(response);
-      },
     });
+    token.updateStatus(res);
+    if (!res.ok) {
+      throw new HTTPError({
+        message: `GitHub API error: ${res.status} ${res.statusText}`,
+        statusCode: res.status,
+      });
+    }
+    const contentType = res.headers.get("content-type") || "";
+    return (contentType.includes("application/json") ? await res.json() : await res.text()) as T;
   },
   {
     ...cacheOptions("api"),
-    integrity: "cb2RkuNE4G",
     validate(entry) {
       if (
         !entry.value ||
@@ -93,7 +89,6 @@ export const ghMarkdown = defineCachedFunction(
       method: "POST",
       headers: {
         accept: "application/vnd.github+json",
-        "content-type": "text/x-markdown",
       },
       body: JSON.stringify({
         text: markdown,
