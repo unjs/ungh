@@ -7,6 +7,7 @@ export interface GHToken {
   remaining?: number;
   limit?: number;
   reset?: number;
+  _lastValidated?: number;
   _app?: boolean;
   _appInstallationId?: string;
 }
@@ -15,7 +16,6 @@ export const ghTokens: GHToken[] = [];
 
 let _tokensInitialized = false;
 let _tokensValidatePromise: Promise<void> | undefined;
-let _tokensLastValidatedDate: Date | undefined;
 
 export function ensureTokens() {
   if (_tokensInitialized) return;
@@ -36,49 +36,55 @@ export function ensureTokensValidated() {
   return _tokensValidatePromise;
 }
 
-// NOTE: This function consumes one API call for each token to get their rate limit info.
+// NOTE: Each call consumes one API request per token to fetch rate limit info.
 // Call this sparingly.
-async function validateGHTokens() {
-  ensureTokens();
-  _tokensLastValidatedDate = new Date();
-  await Promise.all(
-    ghTokens.map(async (token) => {
-      try {
-        const res = await ofetch.raw("https://api.github.com/meta", {
-          ignoreResponseError: true,
-          headers: {
-            "User-Agent": "fetch",
-            Authorization: `token ${token.token}`,
-          },
-        });
-        updateTokenStatus(token, res);
-        const resetInfo = token.reset
-          ? ` resets in ${formatDuration(token.reset - Date.now())}`
-          : "";
-        const resource = res.headers.get("x-ratelimit-resource") || "";
-        console.log(
-          `GitHub token ${token.valid ? "validated" : "invalid"} (${res.status}): ${token.remaining}/${token.limit}${resource ? ` [${resource}]` : ""}${resetInfo}`,
-        );
-      } catch (error) {
-        console.error("Error validating GitHub token:", error);
-        token.valid = false;
-        token.remaining = 0;
-        token.limit = 0;
-      }
-    }),
-  );
+async function validateGHToken(token: GHToken) {
+  try {
+    const res = await ofetch.raw("https://api.github.com/meta", {
+      ignoreResponseError: true,
+      headers: {
+        "User-Agent": "fetch",
+        Authorization: `token ${token.token}`,
+      },
+    });
+    updateTokenStatus(token, res);
+    token._lastValidated = Date.now();
+    const resetInfo = token.reset ? ` resets in ${formatDuration(token.reset - Date.now())}` : "";
+    const resource = res.headers.get("x-ratelimit-resource") || "";
+    console.log(
+      `GitHub token ${token.valid ? "validated" : "invalid"} (${res.status}): ${token.remaining}/${token.limit}${resource ? ` [${resource}]` : ""}${resetInfo}`,
+    );
+  } catch (error) {
+    console.error("Error validating GitHub token:", error);
+    token.valid = false;
+    token.remaining = 0;
+    token.limit = 0;
+    token._lastValidated = Date.now();
+  }
 }
 
+async function validateGHTokens() {
+  ensureTokens();
+  await Promise.all(ghTokens.map((token) => validateGHToken(token)));
+}
+
+const REVALIDATE_INTERVAL = 60_000; // 1 min
+
 /**
- * Calls `validateGHTokens()` only after at least 1 min has elapsed to not bombard the GitHub API
- * when we run out of tokens.
+ * Revalidates only tokens that haven't been validated in the last minute.
+ * Returns true if any tokens were revalidated.
  */
 export async function revalidateGHTokens() {
-  if (!_tokensLastValidatedDate || Date.now() - _tokensLastValidatedDate.getTime() > 60_000) {
-    await validateGHTokens();
-    return true;
+  ensureTokens();
+  const now = Date.now();
+  const staleTokens = ghTokens.filter(
+    (t) => !t._lastValidated || now - t._lastValidated > REVALIDATE_INTERVAL,
+  );
+  if (staleTokens.length === 0) {
+    return false;
   }
-  return false;
+  await Promise.all(staleTokens.map((token) => validateGHToken(token)));
+  return true;
 }
 
 export function getGHToken() {
