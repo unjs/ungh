@@ -9,6 +9,7 @@ import {
   ensureTokensValidated,
   ensureAllTokensValidated,
   revalidateGHTokens,
+  ensureAppToken,
 } from "~/utils/github_token";
 
 function mockResponse(status: number, headers: Record<string, string> = {}): Response {
@@ -497,6 +498,7 @@ describe("ensureTokensValidated", () => {
   beforeEach(() => {
     fetchSpy = vi.spyOn(globalThis, "fetch");
     ghTokens.length = 0;
+    ensureTokensValidated.reset();
   });
 
   afterEach(() => {
@@ -542,6 +544,8 @@ describe("ensureAllTokensValidated", () => {
   beforeEach(() => {
     fetchSpy = vi.spyOn(globalThis, "fetch");
     ghTokens.length = 0;
+    ensureAllTokensValidated.reset();
+    ensureAppToken.reset();
   });
 
   afterEach(() => {
