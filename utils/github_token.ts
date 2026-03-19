@@ -121,10 +121,7 @@ async function _doRevalidateGHTokens() {
   if (staleTokens.length === 0 && getGHToken()) {
     return false;
   }
-  await Promise.all([
-    ...staleTokens.map((t) => t.validate()),
-    ensureAppToken(),
-  ]);
+  await Promise.all([...staleTokens.map((t) => t.validate()), ensureAppToken()]);
   return true;
 }
 
