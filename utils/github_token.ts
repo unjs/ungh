@@ -3,6 +3,7 @@ import { ofetch } from "ofetch";
 
 const REVALIDATE_INTERVAL = 60_000; // 1 min
 
+/** Represents a GitHub API token with rate limit tracking and validation. */
 export class GHToken {
   token: string;
   valid?: boolean;
@@ -76,6 +77,7 @@ export class GHToken {
 
 const runtimeConfig = useRuntimeConfig();
 
+/** All registered GitHub tokens (PAT and App-generated). */
 export const ghTokens: GHToken[] = ((runtimeConfig.GH_TOKEN as string) || "")
   .split(",")
   .map((t) => t.trim())
@@ -84,11 +86,12 @@ export const ghTokens: GHToken[] = ((runtimeConfig.GH_TOKEN as string) || "")
 
 let _validatePromise: Promise<void> | undefined;
 
+/** Validates all tokens and bootstraps App tokens on first call. Idempotent. */
 export async function ensureTokensValidated() {
   if (!_validatePromise) {
     _validatePromise = Promise.all([
       Promise.all(ghTokens.map((t) => t.validate())),
-      _ensureAppToken(),
+      ensureAppToken(),
     ]).then(() => {});
   }
   await _validatePromise;
@@ -115,13 +118,17 @@ export function revalidateGHTokens() {
 async function _doRevalidateGHTokens() {
   const now = Date.now();
   const staleTokens = ghTokens.filter((t) => t.isStale(now));
-  if (staleTokens.length === 0) {
+  if (staleTokens.length === 0 && getGHToken()) {
     return false;
   }
-  await Promise.all(staleTokens.map((t) => t.validate()));
+  await Promise.all([
+    ...staleTokens.map((t) => t.validate()),
+    ensureAppToken(),
+  ]);
   return true;
 }
 
+/** Returns the best available token (highest remaining quota), or `undefined` if none available. */
 export function getGHToken() {
   const now = Date.now();
   for (const token of ghTokens) {
@@ -132,6 +139,7 @@ export function getGHToken() {
     .sort((a, b) => (b.remaining ?? 1) - (a.remaining ?? 1))[0];
 }
 
+/** Formats a duration in milliseconds to a human-readable string (e.g. `"5m"`, `"1h30m"`). */
 export function formatDuration(ms: number) {
   const minutes = Math.round(ms / 60_000);
   if (minutes < 1) return "<1m";
@@ -145,7 +153,8 @@ export function formatDuration(ms: number) {
 
 let _appTokenPromise: Promise<void> | undefined;
 
-function _ensureAppToken() {
+/** Bootstraps GitHub App installation tokens if App credentials are configured. Idempotent. */
+export function ensureAppToken() {
   if (!_appTokenPromise) {
     _appTokenPromise = _refreshAppToken();
   }
@@ -241,6 +250,7 @@ async function _refreshAppToken() {
   }
 }
 
+/** Creates an RS256-signed JWT for GitHub App authentication. Exported for testing. */
 export async function _createAppJWT(appId: string, privateKey: string): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const header = _base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
@@ -261,6 +271,7 @@ export async function _createAppJWT(appId: string, privateKey: string): Promise<
   return `${header}.${payload}.${signature}`;
 }
 
+/** Encodes a UTF-8 string to base64url. Exported for testing. */
 export function _base64url(str: string): string {
   return _bufferToBase64url(new TextEncoder().encode(str));
 }
