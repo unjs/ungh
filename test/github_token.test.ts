@@ -10,6 +10,7 @@ import {
   ensureAllTokensValidated,
   revalidateGHTokens,
   ensureAppToken,
+  acquireGHToken,
 } from "~/utils/github_token";
 
 function mockResponse(status: number, headers: Record<string, string> = {}): Response {
@@ -613,5 +614,343 @@ describe("revalidateGHTokens", () => {
     expect(r1).toBe(r2);
     // Only one set of validations should have happened
     expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("acquireGHToken", () => {
+  let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    fetchSpy = vi.spyOn(globalThis, "fetch");
+    ghTokens.length = 0;
+    ensureTokensValidated.reset();
+  });
+
+  afterEach(() => {
+    fetchSpy.mockRestore();
+  });
+
+  it("returns the best available token after validation", async () => {
+    const t = new GHToken("tok");
+    ghTokens.push(t);
+
+    fetchSpy.mockResolvedValue(mockResponse(200, rateLimitHeaders(4000, 5000)));
+
+    const result = await acquireGHToken();
+    expect(result).toBe(t);
+    expect(t.valid).toBe(true);
+  });
+
+  it("returns undefined when all tokens are invalid", async () => {
+    const t = new GHToken("tok");
+    ghTokens.push(t);
+
+    fetchSpy.mockResolvedValue(mockResponse(401, rateLimitHeaders(0, 0)));
+
+    const result = await acquireGHToken();
+    expect(result).toBeUndefined();
+  });
+
+  it("revalidates and returns token when first getGHToken returns nothing", async () => {
+    const t = new GHToken("tok");
+    ghTokens.push(t);
+
+    // First call (ensureTokensValidated) marks token as exhausted
+    // Second call (revalidateGHTokens) restores it
+    let callCount = 0;
+    fetchSpy.mockImplementation(async () => {
+      callCount++;
+      if (callCount <= 1) {
+        return mockResponse(200, rateLimitHeaders(0, 5000, Math.floor(Date.now() / 1000) - 1));
+      }
+      return mockResponse(200, rateLimitHeaders(4000, 5000));
+    });
+
+    const result = await acquireGHToken();
+    // After revalidation, the token should be available
+    expect(result).toBe(t);
+  });
+});
+
+describe("GHToken utility methods", () => {
+  describe("maskedToken", () => {
+    it("masks middle of long tokens", () => {
+      const token = new GHToken("ghp_abcdefghijklmnop");
+      expect(token.maskedToken).toBe("ghp_***mnop");
+    });
+
+    it("returns *** for short tokens", () => {
+      const token = new GHToken("short");
+      expect(token.maskedToken).toBe("***");
+    });
+
+    it("masks tokens of exactly 9 chars (boundary)", () => {
+      const token = new GHToken("123456789");
+      expect(token.maskedToken).toBe("1234***6789");
+    });
+  });
+
+  describe("toJSON", () => {
+    it("returns serializable object with masked token", () => {
+      const token = new GHToken("ghp_abcdefghijklmnop");
+      token.valid = true;
+      token.remaining = 4500;
+      token.limit = 5000;
+      token.reset = 1700000000000;
+
+      const json = token.toJSON();
+      expect(json).toEqual({
+        token: "ghp_***mnop",
+        valid: true,
+        remaining: 4500,
+        limit: 5000,
+        reset: 1700000000000,
+      });
+    });
+  });
+
+  describe("toString", () => {
+    it("includes pat type for regular tokens", () => {
+      const token = new GHToken("ghp_abcdefghijklmnop");
+      expect(token.toString()).toBe("[GitHub pat token ghp_***mnop]");
+    });
+
+    it("includes app type for app tokens", () => {
+      const token = new GHToken("ghs_abcdefghijklmnop", { app: true });
+      expect(token.toString()).toBe("[GitHub app token ghs_***mnop]");
+    });
+  });
+
+  describe("Symbol inspect", () => {
+    it("returns same as toString", () => {
+      const token = new GHToken("ghp_abcdefghijklmnop");
+      const inspectKey = Symbol.for("nodejs.util.inspect.custom");
+      const inspect = (token as any)[inspectKey]();
+      expect(inspect).toBe(token.toString());
+    });
+  });
+});
+
+describe("_refreshAppToken via ensureAppToken", () => {
+  let fetchSpy: ReturnType<typeof vi.spyOn>;
+  const originalEnv = { ...process.env };
+
+  beforeEach(() => {
+    fetchSpy = vi.spyOn(globalThis, "fetch");
+    ghTokens.length = 0;
+    ensureAppToken.reset();
+  });
+
+  afterEach(() => {
+    fetchSpy.mockRestore();
+    process.env = { ...originalEnv };
+  });
+
+  it("does nothing when GH_APP_ID is not set", async () => {
+    delete process.env.GH_APP_ID;
+    delete process.env.GH_APP_PRIVATE_KEY;
+
+    await ensureAppToken();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when GH_APP_PRIVATE_KEY is not set", async () => {
+    process.env.GH_APP_ID = "123";
+    delete process.env.GH_APP_PRIVATE_KEY;
+
+    await ensureAppToken();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("fetches installations and creates tokens", async () => {
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: "RSASSA-PKCS1-v1_5",
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: "SHA-256",
+      },
+      true,
+      ["sign", "verify"],
+    );
+    const pkcs8 = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+    const pem = `-----BEGIN PRIVATE KEY-----\n${btoa(String.fromCharCode(...new Uint8Array(pkcs8)))}\n-----END PRIVATE KEY-----`;
+
+    process.env.GH_APP_ID = "99";
+    process.env.GH_APP_PRIVATE_KEY = pem;
+
+    const expiresAt = new Date(Date.now() + 3600_000).toISOString();
+
+    fetchSpy.mockImplementation(async (url: string | URL | Request) => {
+      const urlStr = typeof url === "string" ? url : url instanceof URL ? url.toString() : url.url;
+      if (urlStr.includes("/app/installations") && !urlStr.includes("/access_tokens")) {
+        return new Response(JSON.stringify([{ id: 42 }]), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (urlStr.includes("/access_tokens")) {
+        return new Response(
+          JSON.stringify({ token: "ghs_installtoken123456", expires_at: expiresAt }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      // validate call
+      return mockResponse(200, rateLimitHeaders(4500, 5000));
+    });
+
+    await ensureAppToken();
+
+    const appToken = ghTokens.find((t) => t._app);
+    expect(appToken).toBeDefined();
+    expect(appToken!._appInstallationId).toBe("42");
+    expect(appToken!.valid).toBe(true);
+  });
+
+  it("updates existing app token instead of creating new one", async () => {
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: "RSASSA-PKCS1-v1_5",
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: "SHA-256",
+      },
+      true,
+      ["sign", "verify"],
+    );
+    const pkcs8 = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+    const pem = `-----BEGIN PRIVATE KEY-----\n${btoa(String.fromCharCode(...new Uint8Array(pkcs8)))}\n-----END PRIVATE KEY-----`;
+
+    process.env.GH_APP_ID = "99";
+    process.env.GH_APP_PRIVATE_KEY = pem;
+
+    // Pre-existing app token for installation 42
+    const existing = new GHToken("old-token", { app: true, appInstallationId: "42" });
+    existing.valid = true;
+    existing.remaining = 100;
+    ghTokens.push(existing);
+
+    const expiresAt = new Date(Date.now() + 3600_000).toISOString();
+
+    fetchSpy.mockImplementation(async (url: string | URL | Request) => {
+      const urlStr = typeof url === "string" ? url : url instanceof URL ? url.toString() : url.url;
+      if (urlStr.includes("/app/installations") && !urlStr.includes("/access_tokens")) {
+        return new Response(JSON.stringify([{ id: 42 }]), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (urlStr.includes("/access_tokens")) {
+        return new Response(
+          JSON.stringify({ token: "ghs_newtoken123456789", expires_at: expiresAt }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      return mockResponse(200, rateLimitHeaders(4500, 5000));
+    });
+
+    await ensureAppToken();
+
+    // Should have updated the existing token, not added a new one
+    const appTokens = ghTokens.filter((t) => t._appInstallationId === "42");
+    expect(appTokens).toHaveLength(1);
+    expect(appTokens[0]!.token).toBe("ghs_newtoken123456789");
+  });
+
+  it("handles installation token fetch failure gracefully", async () => {
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: "RSASSA-PKCS1-v1_5",
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: "SHA-256",
+      },
+      true,
+      ["sign", "verify"],
+    );
+    const pkcs8 = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+    const pem = `-----BEGIN PRIVATE KEY-----\n${btoa(String.fromCharCode(...new Uint8Array(pkcs8)))}\n-----END PRIVATE KEY-----`;
+
+    process.env.GH_APP_ID = "99";
+    process.env.GH_APP_PRIVATE_KEY = pem;
+
+    fetchSpy.mockImplementation(async (url: string | URL | Request) => {
+      const urlStr = typeof url === "string" ? url : url instanceof URL ? url.toString() : url.url;
+      if (urlStr.includes("/app/installations") && !urlStr.includes("/access_tokens")) {
+        return new Response(JSON.stringify([{ id: 42 }]), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (urlStr.includes("/access_tokens")) {
+        return new Response(null, { status: 500 });
+      }
+      return mockResponse(200, rateLimitHeaders(4500, 5000));
+    });
+
+    // Should not throw
+    await ensureAppToken();
+    expect(ghTokens.filter((t) => t._app)).toHaveLength(0);
+  });
+
+  it("handles installations fetch failure gracefully", async () => {
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: "RSASSA-PKCS1-v1_5",
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: "SHA-256",
+      },
+      true,
+      ["sign", "verify"],
+    );
+    const pkcs8 = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+    const pem = `-----BEGIN PRIVATE KEY-----\n${btoa(String.fromCharCode(...new Uint8Array(pkcs8)))}\n-----END PRIVATE KEY-----`;
+
+    process.env.GH_APP_ID = "99";
+    process.env.GH_APP_PRIVATE_KEY = pem;
+
+    fetchSpy.mockImplementation(async (url: string | URL | Request) => {
+      const urlStr = typeof url === "string" ? url : url instanceof URL ? url.toString() : url.url;
+      if (urlStr.includes("/app/installations")) {
+        return new Response(null, { status: 403 });
+      }
+      return mockResponse(200, rateLimitHeaders(4500, 5000));
+    });
+
+    // Should not throw
+    await ensureAppToken();
+  });
+
+  it("handles empty installations list", async () => {
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: "RSASSA-PKCS1-v1_5",
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: "SHA-256",
+      },
+      true,
+      ["sign", "verify"],
+    );
+    const pkcs8 = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+    const pem = `-----BEGIN PRIVATE KEY-----\n${btoa(String.fromCharCode(...new Uint8Array(pkcs8)))}\n-----END PRIVATE KEY-----`;
+
+    process.env.GH_APP_ID = "99";
+    process.env.GH_APP_PRIVATE_KEY = pem;
+
+    fetchSpy.mockImplementation(async (url: string | URL | Request) => {
+      const urlStr = typeof url === "string" ? url : url instanceof URL ? url.toString() : url.url;
+      if (urlStr.includes("/app/installations")) {
+        return new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return mockResponse(200, rateLimitHeaders(4500, 5000));
+    });
+
+    await ensureAppToken();
+    expect(ghTokens.filter((t) => t._app)).toHaveLength(0);
   });
 });
