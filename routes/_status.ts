@@ -31,6 +31,15 @@ export default defineHandler(async () => {
   const totalLimit = tokens.reduce((sum, t) => sum + t.limit, 0);
   const totalUsedPct = computeUsedPct(totalLimit - totalUsed, totalLimit);
 
+  const nextResetMs = ghTokens.reduce((soonest, t) => {
+    if (t.reset && t.reset > Date.now()) {
+      return soonest === 0 ? t.reset : Math.min(soonest, t.reset);
+    }
+    return soonest;
+  }, 0);
+  const refreshSeconds =
+    nextResetMs > 0 ? Math.max(1, Math.ceil((nextResetMs - Date.now()) / 1000)) : 0;
+
   const tokenRows = tokens
     .map((t) => {
       const usedPct = computeUsedPct(t.limit - t.used, t.limit);
@@ -65,7 +74,7 @@ export default defineHandler(async () => {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>ungh status</title>
+  <title>ungh status</title>${refreshSeconds > 0 ? `\n  <meta http-equiv="refresh" content="${refreshSeconds}">` : ""}
   <style>
     * { box-sizing: border-box; margin: 0; }
     body { padding: 48px 24px; background: #0a0a0a; color: #fafafa; font-family: -apple-system, system-ui, sans-serif; min-height: 100vh; }
@@ -106,12 +115,6 @@ export default defineHandler(async () => {
   <div class="container">
     <h1>ungh status</h1>
     <p class="subtitle">GitHub API token rate limits</p>
-
-    <div class="card">
-      <h2>Sponsors</h2>
-      <div style="overflow:hidden;border-radius:6px;">${thanksSvg}</div>
-      <div style="text-align:center;"><a href="https://github.com/apps/ungh-app" target="_blank" class="btn">Install GitHub App</a></div>
-    </div>
 
     <div class="card">
       <div class="card-header">

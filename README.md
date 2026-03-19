@@ -309,7 +309,7 @@ Find one github user by email or other query.
 
 ## Sponsors
 
-Hosting is sponsored by [Vercel](https://vercel.com/?utm_source=ungh).
+![Sponsors](https://ungh.cc/_thanks)
 
 ## License
 
