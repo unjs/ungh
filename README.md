@@ -309,7 +309,9 @@ Find one github user by email or other query.
 
 ## Sponsors
 
-![Sponsors](https://ungh.cc/_thanks)
+<p align="center">
+  <img src="https://ungh.cc/_thanks" alt="Sponsors" />
+</p>
 
 ## License
 
