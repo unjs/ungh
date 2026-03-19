@@ -13,6 +13,8 @@ import {
   acquireGHToken,
 } from "~/utils/github_token";
 
+// --- Test helpers ---
+
 function mockResponse(status: number, headers: Record<string, string> = {}): Response {
   return new Response(null, { status, headers });
 }
@@ -28,6 +30,71 @@ function rateLimitHeaders(
     ...(resetEpoch ? { "x-ratelimit-reset": String(resetEpoch) } : {}),
   };
 }
+
+/** Generates a PEM key pair for App JWT tests. Cached after first call. */
+let _cachedKeyPair: { pem: string; keyPair: CryptoKeyPair } | undefined;
+async function getTestKeyPair() {
+  if (!_cachedKeyPair) {
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: "RSASSA-PKCS1-v1_5",
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: "SHA-256",
+      },
+      true,
+      ["sign", "verify"],
+    );
+    const pkcs8 = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+    const pem = `-----BEGIN PRIVATE KEY-----\n${btoa(String.fromCharCode(...new Uint8Array(pkcs8)))}\n-----END PRIVATE KEY-----`;
+    _cachedKeyPair = { pem, keyPair };
+  }
+  return _cachedKeyPair;
+}
+
+/** Creates a fetch mock that routes GitHub App API calls. */
+function mockAppFetch(
+  fetchSpy: ReturnType<typeof vi.spyOn>,
+  opts: {
+    installations?: { id: number }[];
+    installationsStatus?: number;
+    accessToken?: { token: string; expires_at: string };
+    accessTokenStatus?: number;
+  } = {},
+) {
+  const {
+    installations = [{ id: 42 }],
+    installationsStatus = 200,
+    accessToken = {
+      token: "ghs_installtoken123456",
+      expires_at: new Date(Date.now() + 3600_000).toISOString(),
+    },
+    accessTokenStatus = 200,
+  } = opts;
+
+  fetchSpy.mockImplementation(async (url: string | URL | Request) => {
+    const urlStr = typeof url === "string" ? url : url instanceof URL ? url.toString() : url.url;
+    if (urlStr.includes("/app/installations") && !urlStr.includes("/access_tokens")) {
+      return new Response(JSON.stringify(installations), {
+        status: installationsStatus,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (urlStr.includes("/access_tokens")) {
+      if (accessTokenStatus !== 200) {
+        return new Response(null, { status: accessTokenStatus });
+      }
+      return new Response(JSON.stringify(accessToken), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    // validate call (/meta)
+    return mockResponse(200, rateLimitHeaders(4500, 5000));
+  });
+}
+
+// --- GHToken class ---
 
 describe("GHToken", () => {
   describe("updateStatus", () => {
@@ -45,16 +112,13 @@ describe("GHToken", () => {
     it("marks token invalid on 401", () => {
       const token = new GHToken("bad-token");
       token.updateStatus(mockResponse(401, rateLimitHeaders(0, 0)));
-
       expect(token.valid).toBe(false);
       expect(token.remaining).toBe(0);
     });
 
     it("marks token valid on 403 (rate limited, not auth failure)", () => {
       const token = new GHToken("test-token");
-      const resetEpoch = Math.floor(Date.now() / 1000) + 60;
-      token.updateStatus(mockResponse(403, rateLimitHeaders(0, 5000, resetEpoch)));
-
+      token.updateStatus(mockResponse(403, rateLimitHeaders(0, 5000)));
       expect(token.valid).toBe(true);
       expect(token.remaining).toBe(0);
     });
@@ -62,21 +126,14 @@ describe("GHToken", () => {
     it("handles missing reset header", () => {
       const token = new GHToken("test-token");
       token.updateStatus(mockResponse(200, rateLimitHeaders(100, 5000)));
-
       expect(token.reset).toBeUndefined();
     });
   });
 
   describe("validate", () => {
     let fetchSpy: ReturnType<typeof vi.spyOn>;
-
-    beforeEach(() => {
-      fetchSpy = vi.spyOn(globalThis, "fetch");
-    });
-
-    afterEach(() => {
-      fetchSpy.mockRestore();
-    });
+    beforeEach(() => { fetchSpy = vi.spyOn(globalThis, "fetch"); });
+    afterEach(() => { fetchSpy.mockRestore(); });
 
     it("updates status from /meta response", async () => {
       const resetEpoch = Math.floor(Date.now() / 1000) + 3600;
@@ -100,22 +157,18 @@ describe("GHToken", () => {
 
     it("marks token invalid on 401 response", async () => {
       fetchSpy.mockResolvedValueOnce(mockResponse(401, rateLimitHeaders(0, 0)));
-
       const token = new GHToken("bad-token");
       await token.validate();
-
       expect(token.valid).toBe(false);
       expect(token._lastValidated).toBeTypeOf("number");
     });
 
     it("preserves state on transport error", async () => {
       fetchSpy.mockRejectedValue(new TypeError("fetch failed"));
-
       const token = new GHToken("test-token");
       token.valid = true;
       token.remaining = 1000;
       await token.validate();
-
       expect(token.valid).toBe(true);
       expect(token.remaining).toBe(1000);
       expect(token._lastValidated).toBeUndefined();
@@ -123,10 +176,8 @@ describe("GHToken", () => {
 
     it("sends authorization header", async () => {
       fetchSpy.mockResolvedValueOnce(mockResponse(200, rateLimitHeaders(5000, 5000)));
-
       const token = new GHToken("ghp_secret123");
       await token.validate();
-
       const [, init] = fetchSpy.mock.calls[0]!;
       const headers = new Headers((init as RequestInit)?.headers);
       expect(headers.get("Authorization")).toBe("token ghp_secret123");
@@ -134,139 +185,70 @@ describe("GHToken", () => {
   });
 
   describe("isStale", () => {
-    it("returns true when never validated", () => {
-      const token = new GHToken("test-token");
-      expect(token.isStale()).toBe(true);
-    });
+    const now = 1_000_000;
 
-    it("returns false when recently validated", () => {
-      const token = new GHToken("test-token");
-      token._lastValidated = Date.now();
-      expect(token.isStale()).toBe(false);
-    });
-
-    it("returns true when validated more than 1 minute ago", () => {
-      const token = new GHToken("test-token");
-      token._lastValidated = Date.now() - 61_000;
-      expect(token.isStale()).toBe(true);
-    });
-
-    it("returns false when rate limit reset is pending", () => {
-      const token = new GHToken("test-token");
-      token._lastValidated = Date.now() - 120_000; // stale by time
-      token.reset = Date.now() + 60_000; // but reset is in the future
-      expect(token.isStale()).toBe(false);
-    });
-
-    it("returns true when rate limit reset has passed", () => {
-      const token = new GHToken("test-token");
-      token._lastValidated = Date.now() - 120_000;
-      token.reset = Date.now() - 1000; // reset is in the past
-      expect(token.isStale()).toBe(true);
+    it.each([
+      { desc: "never validated", lastValidated: undefined, reset: undefined, expected: true },
+      { desc: "recently validated", lastValidated: now - 1000, reset: undefined, expected: false },
+      { desc: "validated >1min ago", lastValidated: now - 61_000, reset: undefined, expected: true },
+      { desc: "stale but reset pending", lastValidated: now - 120_000, reset: now + 60_000, expected: false },
+      { desc: "stale and reset passed", lastValidated: now - 120_000, reset: now - 1000, expected: true },
+    ])("$desc → $expected", ({ lastValidated, reset, expected }) => {
+      const token = new GHToken("t");
+      token._lastValidated = lastValidated;
+      if (reset !== undefined) token.reset = reset;
+      expect(token.isStale(now)).toBe(expected);
     });
   });
 
   describe("clearExpiredLimits", () => {
-    it("clears limits when reset has passed", () => {
-      const token = new GHToken("test-token");
-      token.valid = true;
-      token.remaining = 0;
-      token.limit = 5000;
-      token.reset = Date.now() - 1000;
+    const now = 1_000_000;
 
-      token.clearExpiredLimits();
+    it.each<{
+      desc: string;
+      state: { valid?: boolean; remaining: number; limit: number; reset: number };
+      clears: boolean;
+    }>([
+      { desc: "valid=true, remaining=0, reset expired", state: { valid: true, remaining: 0, limit: 5000, reset: now - 1000 }, clears: true },
+      { desc: "valid=undefined, remaining=0, reset expired", state: { valid: undefined, remaining: 0, limit: 5000, reset: now - 1000 }, clears: true },
+      { desc: "valid=true, remaining=0, reset in future", state: { valid: true, remaining: 0, limit: 5000, reset: now + 60_000 }, clears: false },
+      { desc: "valid=true, remaining>0, reset expired", state: { valid: true, remaining: 100, limit: 5000, reset: now - 1000 }, clears: false },
+      { desc: "valid=false, remaining=0, reset expired", state: { valid: false, remaining: 0, limit: 5000, reset: now - 1000 }, clears: false },
+    ])("$desc → clears=$clears", ({ state, clears }) => {
+      const token = new GHToken("t");
+      token.valid = state.valid;
+      token.remaining = state.remaining;
+      token.limit = state.limit;
+      token.reset = state.reset;
 
-      expect(token.remaining).toBeUndefined();
-      expect(token.limit).toBeUndefined();
-      expect(token.reset).toBeUndefined();
-    });
+      token.clearExpiredLimits(now);
 
-    it("does not clear when reset is still in the future", () => {
-      const token = new GHToken("test-token");
-      token.valid = true;
-      token.remaining = 0;
-      token.limit = 5000;
-      token.reset = Date.now() + 60_000;
-
-      token.clearExpiredLimits();
-
-      expect(token.remaining).toBe(0);
-      expect(token.limit).toBe(5000);
-      expect(token.reset).toBeDefined();
-    });
-
-    it("does not clear when remaining > 0", () => {
-      const token = new GHToken("test-token");
-      token.valid = true;
-      token.remaining = 100;
-      token.limit = 5000;
-      token.reset = Date.now() - 1000;
-
-      token.clearExpiredLimits();
-
-      expect(token.remaining).toBe(100);
-    });
-
-    it("does not clear for invalid tokens", () => {
-      const token = new GHToken("test-token");
-      token.valid = false;
-      token.remaining = 0;
-      token.limit = 5000;
-      token.reset = Date.now() - 1000;
-
-      token.clearExpiredLimits();
-
-      expect(token.remaining).toBe(0);
-    });
-
-    it("clears when valid is undefined (never validated)", () => {
-      const token = new GHToken("test-token");
-      // valid is undefined
-      token.remaining = 0;
-      token.limit = 5000;
-      token.reset = Date.now() - 1000;
-
-      token.clearExpiredLimits();
-
-      expect(token.remaining).toBeUndefined();
-      expect(token.limit).toBeUndefined();
-      expect(token.reset).toBeUndefined();
+      if (clears) {
+        expect(token.remaining).toBeUndefined();
+        expect(token.limit).toBeUndefined();
+        expect(token.reset).toBeUndefined();
+      } else {
+        expect(token.remaining).toBe(state.remaining);
+      }
     });
   });
 
   describe("available", () => {
-    it("returns true for valid token with remaining requests", () => {
-      const token = new GHToken("test-token");
-      token.valid = true;
-      token.remaining = 100;
-      expect(token.available).toBe(true);
-    });
-
-    it("returns false for invalid token", () => {
-      const token = new GHToken("test-token");
-      token.valid = false;
-      token.remaining = 100;
-      expect(token.available).toBe(false);
-    });
-
-    it("returns false for exhausted token", () => {
-      const token = new GHToken("test-token");
-      token.valid = true;
-      token.remaining = 0;
-      expect(token.available).toBe(false);
-    });
-
-    it("returns true for unvalidated token (valid=undefined treated as falsy)", () => {
-      const token = new GHToken("test-token");
-      // valid is undefined, remaining is undefined
-      expect(token.available).toBeFalsy();
-    });
-
-    it("returns true when remaining is undefined (fresh valid token)", () => {
-      const token = new GHToken("test-token");
-      token.valid = true;
-      // remaining undefined → defaults to 1
-      expect(token.available).toBe(true);
+    it.each([
+      { desc: "valid with remaining", valid: true, remaining: 100, expected: true },
+      { desc: "invalid with remaining", valid: false as const, remaining: 100, expected: false },
+      { desc: "valid but exhausted", valid: true, remaining: 0, expected: false },
+      { desc: "unvalidated (undefined)", valid: undefined, remaining: undefined, expected: false },
+      { desc: "valid, remaining undefined (defaults to 1)", valid: true, remaining: undefined, expected: true },
+    ])("$desc → $expected", ({ valid, remaining, expected }) => {
+      const token = new GHToken("t");
+      token.valid = valid;
+      token.remaining = remaining;
+      if (expected) {
+        expect(token.available).toBe(true);
+      } else {
+        expect(token.available).toBeFalsy();
+      }
     });
   });
 
@@ -288,80 +270,113 @@ describe("GHToken", () => {
       expect(token._appInstallationId).toBeUndefined();
     });
   });
+
+  describe("maskedToken / toString / toJSON / inspect", () => {
+    it.each([
+      { token: "ghp_abcdefghijklmnop", masked: "ghp_***mnop" },
+      { token: "short", masked: "***" },
+      { token: "123456789", masked: "1234***6789" },
+    ])("maskedToken($token) → $masked", ({ token, masked }) => {
+      expect(new GHToken(token).maskedToken).toBe(masked);
+    });
+
+    it("toString includes type", () => {
+      expect(new GHToken("ghp_abcdefghijklmnop").toString()).toBe("[GitHub pat token ghp_***mnop]");
+      expect(new GHToken("ghs_abcdefghijklmnop", { app: true }).toString()).toBe("[GitHub app token ghs_***mnop]");
+    });
+
+    it("toJSON returns serializable object", () => {
+      const token = new GHToken("ghp_abcdefghijklmnop");
+      token.valid = true;
+      token.remaining = 4500;
+      token.limit = 5000;
+      token.reset = 1700000000000;
+      expect(token.toJSON()).toEqual({
+        token: "ghp_***mnop",
+        valid: true,
+        remaining: 4500,
+        limit: 5000,
+        reset: 1700000000000,
+      });
+    });
+
+    it("inspect returns same as toString", () => {
+      const token = new GHToken("ghp_abcdefghijklmnop");
+      expect((token as any)[Symbol.for("nodejs.util.inspect.custom")]()).toBe(token.toString());
+    });
+  });
 });
 
+// --- Pure functions ---
+
 describe("formatDuration", () => {
-  it("returns '<1m' for durations under 1 minute", () => {
-    expect(formatDuration(0)).toBe("<1m");
-    expect(formatDuration(29_000)).toBe("<1m");
-  });
-
-  it("returns minutes for durations under 1 hour", () => {
-    expect(formatDuration(60_000)).toBe("1m");
-    expect(formatDuration(5 * 60_000)).toBe("5m");
-    expect(formatDuration(59 * 60_000)).toBe("59m");
-  });
-
-  it("returns hours for exact hour durations", () => {
-    expect(formatDuration(60 * 60_000)).toBe("1h");
-    expect(formatDuration(2 * 60 * 60_000)).toBe("2h");
-  });
-
-  it("returns hours and minutes for mixed durations", () => {
-    expect(formatDuration(90 * 60_000)).toBe("1h30m");
-    expect(formatDuration(125 * 60_000)).toBe("2h5m");
+  it.each([
+    [0, "<1m"],
+    [29_000, "<1m"],
+    [60_000, "1m"],
+    [5 * 60_000, "5m"],
+    [59 * 60_000, "59m"],
+    [60 * 60_000, "1h"],
+    [2 * 60 * 60_000, "2h"],
+    [90 * 60_000, "1h30m"],
+    [125 * 60_000, "2h5m"],
+  ])("formatDuration(%i) → %s", (ms, expected) => {
+    expect(formatDuration(ms)).toBe(expected);
   });
 });
 
 describe("_base64url", () => {
-  it("encodes a simple string", () => {
-    const encoded = _base64url("hello");
-    // base64url of "hello" = "aGVsbG8"
-    expect(encoded).toBe("aGVsbG8");
+  it("encodes strings to url-safe base64 without padding", () => {
+    expect(_base64url("hello")).toBe("aGVsbG8");
+    expect(_base64url("a")).not.toContain("=");
+    expect(_base64url("subjects?_d")).not.toMatch(/[+/]/);
   });
 
-  it("produces no padding characters", () => {
-    const encoded = _base64url("a");
-    expect(encoded).not.toContain("=");
-  });
-
-  it("replaces + and / with url-safe chars", () => {
-    // Use a string that produces + or / in standard base64
-    const encoded = _base64url("subjects?_d");
-    expect(encoded).not.toContain("+");
-    expect(encoded).not.toContain("/");
-  });
-
-  it("encodes JSON payloads (JWT use case)", () => {
+  it("round-trips JSON payloads (JWT use case)", () => {
     const json = JSON.stringify({ alg: "RS256", typ: "JWT" });
     const encoded = _base64url(json);
     expect(encoded).toMatch(/^[A-Za-z0-9_-]+$/);
-    // Verify round-trip
     const decoded = atob(encoded.replace(/-/g, "+").replace(/_/g, "/"));
     expect(JSON.parse(decoded)).toEqual({ alg: "RS256", typ: "JWT" });
   });
 });
+
+// --- _createAppJWT ---
+
+/** Verifies an RS256 JWT signature against the test key pair. */
+async function verifyJWTSignature(jwt: string, publicKey: CryptoKey) {
+  const parts = jwt.split(".");
+  expect(parts).toHaveLength(3);
+  const data = new TextEncoder().encode(`${parts[0]}.${parts[1]}`);
+  const sig = Uint8Array.from(atob(parts[2]!.replace(/-/g, "+").replace(/_/g, "/")), (c) =>
+    c.charCodeAt(0),
+  );
+  expect(await crypto.subtle.verify("RSASSA-PKCS1-v1_5", publicKey, sig, data)).toBe(true);
+}
+
+/** Extracts the PKCS#1 key bytes from a PKCS#8 DER buffer. */
+function extractPkcs1FromPkcs8(pkcs8Der: ArrayBuffer): Uint8Array {
+  const bytes = new Uint8Array(pkcs8Der);
+  let offset = 1; // skip SEQUENCE tag
+  if (bytes[offset]! & 0x80) { offset += 1 + (bytes[offset]! & 0x7f); } else { offset += 1; }
+  offset += 3; // version INTEGER (02 01 00)
+  offset += 15; // algorithmId SEQUENCE
+  offset += 1; // OCTET STRING tag
+  if (bytes[offset]! & 0x80) { offset += 1 + (bytes[offset]! & 0x7f); } else { offset += 1; }
+  return bytes.slice(offset);
+}
 
 describe("_createAppJWT", () => {
   let keyPair: CryptoKeyPair;
   let pkcs8Pem: string;
 
   beforeAll(async () => {
-    keyPair = await crypto.subtle.generateKey(
-      {
-        name: "RSASSA-PKCS1-v1_5",
-        modulusLength: 2048,
-        publicExponent: new Uint8Array([1, 0, 1]),
-        hash: "SHA-256",
-      },
-      true,
-      ["sign", "verify"],
-    );
-    const pkcs8 = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
-    pkcs8Pem = `-----BEGIN PRIVATE KEY-----\n${btoa(String.fromCharCode(...new Uint8Array(pkcs8)))}\n-----END PRIVATE KEY-----`;
+    const kp = await getTestKeyPair();
+    keyPair = kp.keyPair;
+    pkcs8Pem = kp.pem;
   });
 
-  it("creates a valid 3-part JWT with PKCS#8 key", async () => {
+  it("creates a valid 3-part JWT with correct header and payload", async () => {
     const jwt = await _createAppJWT("12345", pkcs8Pem);
     const parts = jwt.split(".");
     expect(parts).toHaveLength(3);
@@ -373,78 +388,37 @@ describe("_createAppJWT", () => {
     expect(payload.iss).toBe("12345");
     expect(payload.exp).toBeGreaterThan(payload.iat);
 
-    const data = new TextEncoder().encode(`${parts[0]}.${parts[1]}`);
-    const sig = Uint8Array.from(atob(parts[2]!.replace(/-/g, "+").replace(/_/g, "/")), (c) =>
-      c.charCodeAt(0),
-    );
-    const valid = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", keyPair.publicKey, sig, data);
-    expect(valid).toBe(true);
+    await verifyJWTSignature(jwt, keyPair.publicKey);
   });
 
-  it("handles PEM with escaped newlines", async () => {
-    // Simulate env var with literal \n
-    const escapedPem = pkcs8Pem.replace(/\n/g, "\\n");
-    const jwt = await _createAppJWT("99", escapedPem);
-    expect(jwt.split(".")).toHaveLength(3);
-  });
+  describe("PEM formats", () => {
+    it("PKCS#8 standard PEM", async () => {
+      const jwt = await _createAppJWT("1", pkcs8Pem);
+      await verifyJWTSignature(jwt, keyPair.publicKey);
+    });
 
-  it("handles PKCS#1 (RSA PRIVATE KEY) format", async () => {
-    // Export as PKCS#8, then manually strip the PKCS#8 wrapper to get PKCS#1
-    // We can't easily get raw PKCS#1 from WebCrypto, so we test via the
-    // _pemToKeyData path by providing a PKCS#1-style PEM header
-    const pkcs8Der = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
-    const pkcs8Bytes = new Uint8Array(pkcs8Der);
+    it("PEM with escaped newlines (env var style)", async () => {
+      const jwt = await _createAppJWT("2", pkcs8Pem.replace(/\n/g, "\\n"));
+      await verifyJWTSignature(jwt, keyPair.publicKey);
+    });
 
-    // PKCS#8 wraps PKCS#1 as: SEQUENCE { version, algorithmId, OCTET STRING { pkcs1 } }
-    // We need to extract the PKCS#1 content from the OCTET STRING
-    // Skip outer SEQUENCE tag+length, version (3 bytes), algorithmId (15 bytes)
-    // then parse the OCTET STRING to get the inner PKCS#1 bytes
-    let offset = 0;
-    // Skip SEQUENCE tag
-    offset += 1;
-    // Parse length
-    if (pkcs8Bytes[offset]! & 0x80) {
-      const numLenBytes = pkcs8Bytes[offset]! & 0x7f;
-      offset += 1 + numLenBytes;
-    } else {
-      offset += 1;
-    }
-    // Skip version INTEGER (02 01 00)
-    offset += 3;
-    // Skip algorithmId SEQUENCE (30 0d ...)
-    offset += 15;
-    // Now at OCTET STRING tag (04)
-    offset += 1;
-    // Parse OCTET STRING length
-    if (pkcs8Bytes[offset]! & 0x80) {
-      const numLenBytes = pkcs8Bytes[offset]! & 0x7f;
-      offset += 1 + numLenBytes;
-    } else {
-      offset += 1;
-    }
-    // The rest is PKCS#1 content
-    const pkcs1Bytes = pkcs8Bytes.slice(offset);
-    const pkcs1Base64 = btoa(String.fromCharCode(...pkcs1Bytes));
-    const pkcs1Pem = `-----BEGIN RSA PRIVATE KEY-----\n${pkcs1Base64}\n-----END RSA PRIVATE KEY-----`;
+    it("PKCS#1 (RSA PRIVATE KEY) format", async () => {
+      const pkcs8Der = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+      const pkcs1Bytes = extractPkcs1FromPkcs8(pkcs8Der);
+      const pkcs1Pem = `-----BEGIN RSA PRIVATE KEY-----\n${btoa(String.fromCharCode(...pkcs1Bytes))}\n-----END RSA PRIVATE KEY-----`;
 
-    const jwt = await _createAppJWT("42", pkcs1Pem);
-    const parts = jwt.split(".");
-    expect(parts).toHaveLength(3);
-
-    // Verify the signature is valid (proves PKCS#1 -> PKCS#8 conversion worked)
-    const data = new TextEncoder().encode(`${parts[0]}.${parts[1]}`);
-    const sig = Uint8Array.from(atob(parts[2]!.replace(/-/g, "+").replace(/_/g, "/")), (c) =>
-      c.charCodeAt(0),
-    );
-    const valid = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", keyPair.publicKey, sig, data);
-    expect(valid).toBe(true);
+      const jwt = await _createAppJWT("3", pkcs1Pem);
+      await verifyJWTSignature(jwt, keyPair.publicKey);
+    });
   });
 });
 
+// --- Token registry functions ---
+
 describe("getGHToken", () => {
+  beforeEach(() => { ghTokens.length = 0; });
+
   it("returns the token with highest remaining quota", () => {
-    // Clear and populate ghTokens
-    ghTokens.length = 0;
     const t1 = new GHToken("tok1");
     t1.valid = true;
     t1.remaining = 100;
@@ -452,46 +426,41 @@ describe("getGHToken", () => {
     t2.valid = true;
     t2.remaining = 500;
     ghTokens.push(t1, t2);
-
     expect(getGHToken()).toBe(t2);
   });
 
   it("returns undefined when no tokens are available", () => {
-    ghTokens.length = 0;
     const t = new GHToken("tok");
     t.valid = false;
     ghTokens.push(t);
-
     expect(getGHToken()).toBeUndefined();
   });
 
   it("clears expired limits before selecting", () => {
-    ghTokens.length = 0;
     const t = new GHToken("tok");
     t.valid = true;
     t.remaining = 0;
     t.limit = 5000;
-    t.reset = Date.now() - 1000; // expired
+    t.reset = Date.now() - 1000;
     ghTokens.push(t);
 
     const result = getGHToken();
-    // After clearing, remaining becomes undefined → available (remaining ?? 1 > 0)
     expect(result).toBe(t);
     expect(t.remaining).toBeUndefined();
   });
 
   it("skips exhausted tokens that have not expired", () => {
-    ghTokens.length = 0;
     const t = new GHToken("tok");
     t.valid = true;
     t.remaining = 0;
     t.limit = 5000;
-    t.reset = Date.now() + 60_000; // still in the future
+    t.reset = Date.now() + 60_000;
     ghTokens.push(t);
-
     expect(getGHToken()).toBeUndefined();
   });
 });
+
+// --- Async token management (shared fetch spy setup) ---
 
 describe("ensureTokensValidated", () => {
   let fetchSpy: ReturnType<typeof vi.spyOn>;
@@ -501,39 +470,25 @@ describe("ensureTokensValidated", () => {
     ghTokens.length = 0;
     ensureTokensValidated.reset();
   });
+  afterEach(() => { fetchSpy.mockRestore(); });
 
-  afterEach(() => {
-    fetchSpy.mockRestore();
-  });
-
-  it("validates tokens and stops after first available", async () => {
-    const t1 = new GHToken("tok1");
-    const t2 = new GHToken("tok2");
-    ghTokens.push(t1, t2);
-
+  it("validates tokens until one is available", async () => {
+    ghTokens.push(new GHToken("tok1"), new GHToken("tok2"));
     fetchSpy.mockResolvedValue(mockResponse(200, rateLimitHeaders(4000, 5000)));
-
     await ensureTokensValidated();
-
-    expect(t1.valid).toBe(true);
-    expect(t1.remaining).toBe(4000);
+    expect(ghTokens[0]!.valid).toBe(true);
+    expect(ghTokens[0]!.remaining).toBe(4000);
   });
 
-  it("falls back to revalidation when no token is available after validation", async () => {
-    const t = new GHToken("tok");
-    ghTokens.push(t);
-
-    // Validate returns 401 (invalid) — token not available, triggers revalidation path
+  it("falls back to revalidation when no token is available", async () => {
+    ghTokens.push(new GHToken("tok"));
     fetchSpy.mockResolvedValue(mockResponse(401, rateLimitHeaders(0, 0)));
-
     await ensureTokensValidated();
-
-    // Initial validation marks invalid, revalidation is attempted
-    expect(t.valid).toBe(false);
+    expect(ghTokens[0]!.valid).toBe(false);
     expect(fetchSpy.mock.calls.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("works with no tokens (empty registry)", async () => {
+  it("works with empty registry", async () => {
     await ensureTokensValidated();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
@@ -547,22 +502,14 @@ describe("ensureAllTokensValidated", () => {
     ghTokens.length = 0;
     ensureAppToken.reset();
   });
-
-  afterEach(() => {
-    fetchSpy.mockRestore();
-  });
+  afterEach(() => { fetchSpy.mockRestore(); });
 
   it("validates all tokens", async () => {
-    const t1 = new GHToken("tok1");
-    const t2 = new GHToken("tok2");
-    ghTokens.push(t1, t2);
-
+    ghTokens.push(new GHToken("tok1"), new GHToken("tok2"));
     fetchSpy.mockResolvedValue(mockResponse(200, rateLimitHeaders(3000, 5000)));
-
     await ensureAllTokensValidated();
-
-    expect(t1.valid).toBe(true);
-    expect(t2.valid).toBe(true);
+    expect(ghTokens[0]!.valid).toBe(true);
+    expect(ghTokens[1]!.valid).toBe(true);
   });
 });
 
@@ -573,33 +520,25 @@ describe("revalidateGHTokens", () => {
     fetchSpy = vi.spyOn(globalThis, "fetch");
     ghTokens.length = 0;
   });
-
-  afterEach(() => {
-    fetchSpy.mockRestore();
-  });
+  afterEach(() => { fetchSpy.mockRestore(); });
 
   it("revalidates stale tokens", async () => {
     const t = new GHToken("tok");
     t.valid = true;
-    t._lastValidated = Date.now() - 120_000; // stale
+    t._lastValidated = Date.now() - 120_000;
     ghTokens.push(t);
-
     fetchSpy.mockResolvedValue(mockResponse(200, rateLimitHeaders(4500, 5000)));
-
-    const result = await revalidateGHTokens();
-    expect(result).toBe(true);
+    expect(await revalidateGHTokens()).toBe(true);
     expect(t.remaining).toBe(4500);
   });
 
-  it("returns false when no tokens are stale and one is available", async () => {
+  it("short-circuits when no tokens are stale and one is available", async () => {
     const t = new GHToken("tok");
     t.valid = true;
     t.remaining = 1000;
-    t._lastValidated = Date.now(); // fresh
+    t._lastValidated = Date.now();
     ghTokens.push(t);
-
-    const result = await revalidateGHTokens();
-    expect(result).toBe(false);
+    expect(await revalidateGHTokens()).toBe(false);
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
@@ -607,12 +546,9 @@ describe("revalidateGHTokens", () => {
     const t = new GHToken("tok");
     t._lastValidated = Date.now() - 120_000;
     ghTokens.push(t);
-
     fetchSpy.mockResolvedValue(mockResponse(200, rateLimitHeaders(4000, 5000)));
-
     const [r1, r2] = await Promise.all([revalidateGHTokens(), revalidateGHTokens()]);
     expect(r1).toBe(r2);
-    // Only one set of validations should have happened
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 });
@@ -625,38 +561,25 @@ describe("acquireGHToken", () => {
     ghTokens.length = 0;
     ensureTokensValidated.reset();
   });
-
-  afterEach(() => {
-    fetchSpy.mockRestore();
-  });
+  afterEach(() => { fetchSpy.mockRestore(); });
 
   it("returns the best available token after validation", async () => {
     const t = new GHToken("tok");
     ghTokens.push(t);
-
     fetchSpy.mockResolvedValue(mockResponse(200, rateLimitHeaders(4000, 5000)));
-
-    const result = await acquireGHToken();
-    expect(result).toBe(t);
+    expect(await acquireGHToken()).toBe(t);
     expect(t.valid).toBe(true);
   });
 
   it("returns undefined when all tokens are invalid", async () => {
-    const t = new GHToken("tok");
-    ghTokens.push(t);
-
+    ghTokens.push(new GHToken("tok"));
     fetchSpy.mockResolvedValue(mockResponse(401, rateLimitHeaders(0, 0)));
-
-    const result = await acquireGHToken();
-    expect(result).toBeUndefined();
+    expect(await acquireGHToken()).toBeUndefined();
   });
 
-  it("revalidates and returns token when first getGHToken returns nothing", async () => {
+  it("revalidates when first pass yields no available token", async () => {
     const t = new GHToken("tok");
     ghTokens.push(t);
-
-    // First call (ensureTokensValidated) marks token as exhausted
-    // Second call (revalidateGHTokens) restores it
     let callCount = 0;
     fetchSpy.mockImplementation(async () => {
       callCount++;
@@ -665,73 +588,13 @@ describe("acquireGHToken", () => {
       }
       return mockResponse(200, rateLimitHeaders(4000, 5000));
     });
-
-    const result = await acquireGHToken();
-    // After revalidation, the token should be available
-    expect(result).toBe(t);
+    expect(await acquireGHToken()).toBe(t);
   });
 });
 
-describe("GHToken utility methods", () => {
-  describe("maskedToken", () => {
-    it("masks middle of long tokens", () => {
-      const token = new GHToken("ghp_abcdefghijklmnop");
-      expect(token.maskedToken).toBe("ghp_***mnop");
-    });
+// --- GitHub App token flow ---
 
-    it("returns *** for short tokens", () => {
-      const token = new GHToken("short");
-      expect(token.maskedToken).toBe("***");
-    });
-
-    it("masks tokens of exactly 9 chars (boundary)", () => {
-      const token = new GHToken("123456789");
-      expect(token.maskedToken).toBe("1234***6789");
-    });
-  });
-
-  describe("toJSON", () => {
-    it("returns serializable object with masked token", () => {
-      const token = new GHToken("ghp_abcdefghijklmnop");
-      token.valid = true;
-      token.remaining = 4500;
-      token.limit = 5000;
-      token.reset = 1700000000000;
-
-      const json = token.toJSON();
-      expect(json).toEqual({
-        token: "ghp_***mnop",
-        valid: true,
-        remaining: 4500,
-        limit: 5000,
-        reset: 1700000000000,
-      });
-    });
-  });
-
-  describe("toString", () => {
-    it("includes pat type for regular tokens", () => {
-      const token = new GHToken("ghp_abcdefghijklmnop");
-      expect(token.toString()).toBe("[GitHub pat token ghp_***mnop]");
-    });
-
-    it("includes app type for app tokens", () => {
-      const token = new GHToken("ghs_abcdefghijklmnop", { app: true });
-      expect(token.toString()).toBe("[GitHub app token ghs_***mnop]");
-    });
-  });
-
-  describe("Symbol inspect", () => {
-    it("returns same as toString", () => {
-      const token = new GHToken("ghp_abcdefghijklmnop");
-      const inspectKey = Symbol.for("nodejs.util.inspect.custom");
-      const inspect = (token as any)[inspectKey]();
-      expect(inspect).toBe(token.toString());
-    });
-  });
-});
-
-describe("_refreshAppToken via ensureAppToken", () => {
+describe("ensureAppToken (_refreshAppToken)", () => {
   let fetchSpy: ReturnType<typeof vi.spyOn>;
   const originalEnv = { ...process.env };
 
@@ -746,58 +609,26 @@ describe("_refreshAppToken via ensureAppToken", () => {
     process.env = { ...originalEnv };
   });
 
-  it("does nothing when GH_APP_ID is not set", async () => {
-    delete process.env.GH_APP_ID;
-    delete process.env.GH_APP_PRIVATE_KEY;
-
+  it.each([
+    { desc: "GH_APP_ID missing", id: undefined, key: "some-key" },
+    { desc: "GH_APP_PRIVATE_KEY missing", id: "123", key: undefined },
+    { desc: "both missing", id: undefined, key: undefined },
+  ])("does nothing when $desc", async ({ id, key }) => {
+    if (id) process.env.GH_APP_ID = id; else delete process.env.GH_APP_ID;
+    if (key) process.env.GH_APP_PRIVATE_KEY = key; else delete process.env.GH_APP_PRIVATE_KEY;
     await ensureAppToken();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("does nothing when GH_APP_PRIVATE_KEY is not set", async () => {
-    process.env.GH_APP_ID = "123";
-    delete process.env.GH_APP_PRIVATE_KEY;
-
-    await ensureAppToken();
-    expect(fetchSpy).not.toHaveBeenCalled();
-  });
-
-  it("fetches installations and creates tokens", async () => {
-    const keyPair = await crypto.subtle.generateKey(
-      {
-        name: "RSASSA-PKCS1-v1_5",
-        modulusLength: 2048,
-        publicExponent: new Uint8Array([1, 0, 1]),
-        hash: "SHA-256",
-      },
-      true,
-      ["sign", "verify"],
-    );
-    const pkcs8 = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
-    const pem = `-----BEGIN PRIVATE KEY-----\n${btoa(String.fromCharCode(...new Uint8Array(pkcs8)))}\n-----END PRIVATE KEY-----`;
-
+  async function setupAppEnv() {
+    const { pem } = await getTestKeyPair();
     process.env.GH_APP_ID = "99";
     process.env.GH_APP_PRIVATE_KEY = pem;
+  }
 
-    const expiresAt = new Date(Date.now() + 3600_000).toISOString();
-
-    fetchSpy.mockImplementation(async (url: string | URL | Request) => {
-      const urlStr = typeof url === "string" ? url : url instanceof URL ? url.toString() : url.url;
-      if (urlStr.includes("/app/installations") && !urlStr.includes("/access_tokens")) {
-        return new Response(JSON.stringify([{ id: 42 }]), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-      if (urlStr.includes("/access_tokens")) {
-        return new Response(
-          JSON.stringify({ token: "ghs_installtoken123456", expires_at: expiresAt }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        );
-      }
-      // validate call
-      return mockResponse(200, rateLimitHeaders(4500, 5000));
-    });
+  it("fetches installations and creates tokens", async () => {
+    await setupAppEnv();
+    mockAppFetch(fetchSpy);
 
     await ensureAppToken();
 
@@ -808,148 +639,43 @@ describe("_refreshAppToken via ensureAppToken", () => {
   });
 
   it("updates existing app token instead of creating new one", async () => {
-    const keyPair = await crypto.subtle.generateKey(
-      {
-        name: "RSASSA-PKCS1-v1_5",
-        modulusLength: 2048,
-        publicExponent: new Uint8Array([1, 0, 1]),
-        hash: "SHA-256",
-      },
-      true,
-      ["sign", "verify"],
-    );
-    const pkcs8 = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
-    const pem = `-----BEGIN PRIVATE KEY-----\n${btoa(String.fromCharCode(...new Uint8Array(pkcs8)))}\n-----END PRIVATE KEY-----`;
+    await setupAppEnv();
 
-    process.env.GH_APP_ID = "99";
-    process.env.GH_APP_PRIVATE_KEY = pem;
-
-    // Pre-existing app token for installation 42
     const existing = new GHToken("old-token", { app: true, appInstallationId: "42" });
     existing.valid = true;
     existing.remaining = 100;
     ghTokens.push(existing);
 
-    const expiresAt = new Date(Date.now() + 3600_000).toISOString();
-
-    fetchSpy.mockImplementation(async (url: string | URL | Request) => {
-      const urlStr = typeof url === "string" ? url : url instanceof URL ? url.toString() : url.url;
-      if (urlStr.includes("/app/installations") && !urlStr.includes("/access_tokens")) {
-        return new Response(JSON.stringify([{ id: 42 }]), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-      if (urlStr.includes("/access_tokens")) {
-        return new Response(
-          JSON.stringify({ token: "ghs_newtoken123456789", expires_at: expiresAt }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        );
-      }
-      return mockResponse(200, rateLimitHeaders(4500, 5000));
+    mockAppFetch(fetchSpy, {
+      accessToken: {
+        token: "ghs_newtoken123456789",
+        expires_at: new Date(Date.now() + 3600_000).toISOString(),
+      },
     });
 
     await ensureAppToken();
 
-    // Should have updated the existing token, not added a new one
     const appTokens = ghTokens.filter((t) => t._appInstallationId === "42");
     expect(appTokens).toHaveLength(1);
     expect(appTokens[0]!.token).toBe("ghs_newtoken123456789");
   });
 
   it("handles installation token fetch failure gracefully", async () => {
-    const keyPair = await crypto.subtle.generateKey(
-      {
-        name: "RSASSA-PKCS1-v1_5",
-        modulusLength: 2048,
-        publicExponent: new Uint8Array([1, 0, 1]),
-        hash: "SHA-256",
-      },
-      true,
-      ["sign", "verify"],
-    );
-    const pkcs8 = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
-    const pem = `-----BEGIN PRIVATE KEY-----\n${btoa(String.fromCharCode(...new Uint8Array(pkcs8)))}\n-----END PRIVATE KEY-----`;
-
-    process.env.GH_APP_ID = "99";
-    process.env.GH_APP_PRIVATE_KEY = pem;
-
-    fetchSpy.mockImplementation(async (url: string | URL | Request) => {
-      const urlStr = typeof url === "string" ? url : url instanceof URL ? url.toString() : url.url;
-      if (urlStr.includes("/app/installations") && !urlStr.includes("/access_tokens")) {
-        return new Response(JSON.stringify([{ id: 42 }]), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-      if (urlStr.includes("/access_tokens")) {
-        return new Response(null, { status: 500 });
-      }
-      return mockResponse(200, rateLimitHeaders(4500, 5000));
-    });
-
-    // Should not throw
+    await setupAppEnv();
+    mockAppFetch(fetchSpy, { accessTokenStatus: 500 });
     await ensureAppToken();
     expect(ghTokens.filter((t) => t._app)).toHaveLength(0);
   });
 
   it("handles installations fetch failure gracefully", async () => {
-    const keyPair = await crypto.subtle.generateKey(
-      {
-        name: "RSASSA-PKCS1-v1_5",
-        modulusLength: 2048,
-        publicExponent: new Uint8Array([1, 0, 1]),
-        hash: "SHA-256",
-      },
-      true,
-      ["sign", "verify"],
-    );
-    const pkcs8 = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
-    const pem = `-----BEGIN PRIVATE KEY-----\n${btoa(String.fromCharCode(...new Uint8Array(pkcs8)))}\n-----END PRIVATE KEY-----`;
-
-    process.env.GH_APP_ID = "99";
-    process.env.GH_APP_PRIVATE_KEY = pem;
-
-    fetchSpy.mockImplementation(async (url: string | URL | Request) => {
-      const urlStr = typeof url === "string" ? url : url instanceof URL ? url.toString() : url.url;
-      if (urlStr.includes("/app/installations")) {
-        return new Response(null, { status: 403 });
-      }
-      return mockResponse(200, rateLimitHeaders(4500, 5000));
-    });
-
-    // Should not throw
+    await setupAppEnv();
+    mockAppFetch(fetchSpy, { installationsStatus: 403 });
     await ensureAppToken();
   });
 
   it("handles empty installations list", async () => {
-    const keyPair = await crypto.subtle.generateKey(
-      {
-        name: "RSASSA-PKCS1-v1_5",
-        modulusLength: 2048,
-        publicExponent: new Uint8Array([1, 0, 1]),
-        hash: "SHA-256",
-      },
-      true,
-      ["sign", "verify"],
-    );
-    const pkcs8 = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
-    const pem = `-----BEGIN PRIVATE KEY-----\n${btoa(String.fromCharCode(...new Uint8Array(pkcs8)))}\n-----END PRIVATE KEY-----`;
-
-    process.env.GH_APP_ID = "99";
-    process.env.GH_APP_PRIVATE_KEY = pem;
-
-    fetchSpy.mockImplementation(async (url: string | URL | Request) => {
-      const urlStr = typeof url === "string" ? url : url instanceof URL ? url.toString() : url.url;
-      if (urlStr.includes("/app/installations")) {
-        return new Response(JSON.stringify([]), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-      return mockResponse(200, rateLimitHeaders(4500, 5000));
-    });
-
+    await setupAppEnv();
+    mockAppFetch(fetchSpy, { installations: [] });
     await ensureAppToken();
     expect(ghTokens.filter((t) => t._app)).toHaveLength(0);
   });
