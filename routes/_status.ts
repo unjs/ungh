@@ -1,4 +1,5 @@
 import { defineRouteMeta, defineHandler } from "nitro";
+import { serverFetch } from "nitro/app";
 import { html } from "nitro/h3";
 import { ghTokens, ensureAllTokensValidated, formatDuration } from "~/utils/github_token";
 
@@ -9,7 +10,10 @@ defineRouteMeta({
 });
 
 export default defineHandler(async () => {
-  await ensureAllTokensValidated();
+  const [, thanksSvg] = await Promise.all([
+    ensureAllTokensValidated(),
+    serverFetch("/_thanks").then((r) => r.text()),
+  ]);
 
   const tokens = ghTokens.map((t, i) => {
     const remaining = t.remaining ?? 0;
@@ -42,14 +46,12 @@ export default defineHandler(async () => {
           ? ' <span class="status status-exhausted">exhausted</span>'
           : ' <span class="status status-valid">ok</span>';
       return `
-      <div class="token-row">
-        <div class="token-header">
-          <span class="token-name">Token #${t.index + 1}${statusLabel}</span>
-          <span class="token-meta">${label}${resetInfo}</span>
-        </div>
+      <div class="token-cell">
+        <div class="token-name">Token #${t.index + 1}${statusLabel}</div>
         <div class="bar-track bar-sm">
           <div class="bar-fill ${colorClass}" style="width:${!t.valid ? 0 : usedPct}%"></div>
         </div>
+        <div class="token-meta">${label}${resetInfo}</div>
       </div>`;
     })
     .join("");
@@ -63,11 +65,12 @@ export default defineHandler(async () => {
   <style>
     * { box-sizing: border-box; margin: 0; }
     body { padding: 48px 24px; background: #0a0a0a; color: #fafafa; font-family: -apple-system, system-ui, sans-serif; min-height: 100vh; }
-    .container { max-width: 540px; margin: 0 auto; }
+    .container { max-width: 768px; margin: 0 auto; }
     h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
     h2 { font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; color: #666; margin-bottom: 16px; }
     .subtitle { color: #666; font-size: 14px; margin-top: 4px; margin-bottom: 40px; }
-    .card { background: #141414; border: 1px solid #1e1e1e; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+    .card { background: #141414; border: 1px solid #1e1e1e; border-radius: 10px; padding: 20px; margin-bottom: 16px; overflow: hidden; }
+    .card svg { max-width: 100%; height: auto; display: block; }
     .card-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
     .card-header .title { font-size: 14px; font-weight: 500; }
     .card-header .meta { font-size: 13px; color: #888; font-variant-numeric: tabular-nums; }
@@ -79,22 +82,28 @@ export default defineHandler(async () => {
     .bar-fill.yellow { background: #eab308; }
     .bar-fill.red { background: #ef4444; }
     .bar-fill.gray { background: #333; }
-    .token-row { padding: 12px 0; border-bottom: 1px solid #1e1e1e; }
-    .token-row:last-child { border-bottom: none; padding-bottom: 0; }
-    .token-row:first-child { padding-top: 0; }
-    .token-header { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; margin-bottom: 8px; }
-    .token-name { color: #ccc; font-variant-numeric: tabular-nums; }
-    .token-meta { color: #666; font-variant-numeric: tabular-nums; }
+    .token-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+    .token-cell { background: #1a1a1a; border: 1px solid #1e1e1e; border-radius: 8px; padding: 12px; }
+    .token-name { color: #ccc; font-size: 13px; font-variant-numeric: tabular-nums; margin-bottom: 8px; }
+    .token-meta { color: #666; font-size: 11px; font-variant-numeric: tabular-nums; margin-top: 8px; }
     .status { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 4px; }
     .status-valid { background: #22c55e18; color: #22c55e; }
     .status-exhausted { background: #ef444418; color: #ef4444; }
     .status-invalid { background: #88888818; color: #888; }
+    .btn { display: inline-block; margin-top: 16px; padding: 6px 14px; background: #22c55e; color: #0a0a0a; font-size: 12px; font-weight: 600; border-radius: 6px; text-decoration: none; transition: opacity .2s; }
+    .btn:hover { opacity: 0.85; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>ungh status</h1>
     <p class="subtitle">GitHub API token rate limits</p>
+
+    <div class="card">
+      <h2>Sponsors</h2>
+      <div style="overflow:hidden;border-radius:6px;">${thanksSvg}</div>
+      <div style="text-align:center;"><a href="https://github.com/apps/ungh-app" target="_blank" class="btn">Install GitHub App</a></div>
+    </div>
 
     <div class="card">
       <div class="card-header">
@@ -108,7 +117,7 @@ export default defineHandler(async () => {
 
     <div class="card">
       <h2>Tokens</h2>
-      ${tokenRows}
+      <div class="token-grid">${tokenRows}</div>
     </div>
   </div>
 </body>
