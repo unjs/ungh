@@ -6,11 +6,11 @@ import {
   type GHToken,
   ghTokens,
   getGHToken,
-  validateGHTokens,
   updateTokenStatus,
   formatDuration,
   ensureTokens,
   ensureTokensValidated,
+  revalidateGHTokens,
 } from "~/utils/github_token";
 
 export type { GHToken };
@@ -31,8 +31,7 @@ const cacheOptions = (name: string): CacheOptions => ({
 export const ghFetch = defineCachedFunction(
   async <T = any>(url: string, opts: FetchOptions = {}) => {
     let token = getGHToken();
-    if (!token) {
-      await ensureTokensValidated();
+    if (!token && (await revalidateGHTokens())) {
       token = getGHToken();
     }
     if (!token) {
@@ -49,23 +48,19 @@ export const ghFetch = defineCachedFunction(
         statusCode: 403,
       });
     }
-    const res = await ofetch
-      .raw<T>(url, {
-        baseURL: "https://api.github.com",
-        ...(opts as any),
-        method: (opts.method || "GET").toUpperCase() as any,
-        headers: {
-          "User-Agent": "fetch",
-          Authorization: `token ${token.token}`,
-          ...opts.headers,
-        },
-      })
-      .catch(async (error: unknown) => {
-        await validateGHTokens().catch(() => {});
-        throw error;
-      });
-    updateTokenStatus(token, res);
-    return res._data as T;
+    return ofetch<T>(url, {
+      baseURL: "https://api.github.com",
+      ...(opts as any),
+      method: (opts.method || "GET").toUpperCase() as any,
+      headers: {
+        "User-Agent": "fetch",
+        Authorization: `token ${token.token}`,
+        ...opts.headers,
+      },
+      onResponse({ response }) {
+        updateTokenStatus(token, response);
+      },
+    });
   },
   {
     ...cacheOptions("api"),
