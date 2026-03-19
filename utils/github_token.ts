@@ -15,6 +15,7 @@ export const ghTokens: GHToken[] = [];
 
 let _tokensInitialized = false;
 let _tokensValidatePromise: Promise<void> | undefined;
+let _tokensLastValidatedDate: Date | undefined;
 
 export function ensureTokens() {
   if (_tokensInitialized) return;
@@ -35,8 +36,11 @@ export function ensureTokensValidated() {
   return _tokensValidatePromise;
 }
 
-export async function validateGHTokens() {
+// NOTE: This function consumes one API call for each token to get their rate limit info.
+// Call this sparingly.
+async function validateGHTokens() {
   ensureTokens();
+  _tokensLastValidatedDate = new Date();
   await Promise.all(
     ghTokens.map(async (token) => {
       try {
@@ -63,6 +67,18 @@ export async function validateGHTokens() {
       }
     }),
   );
+}
+
+/**
+ * Calls `validateGHTokens()` only after at least 1 min has elapsed to not bombard the GitHub API
+ * when we run out of tokens.
+ */
+export async function revalidateGHTokens() {
+  if (!_tokensLastValidatedDate || Date.now() - _tokensLastValidatedDate.getTime() > 60_000) {
+    await validateGHTokens();
+    return true;
+  }
+  return false;
 }
 
 export function getGHToken() {
