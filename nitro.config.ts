@@ -37,7 +37,7 @@ export default defineNitroConfig({
   openAPI: {
     meta: {
       title: "🐙 ungh.cc",
-      description: `Unlimited access to GitHub API. <br><br> ⭐ [Star on GitHub](https://github.com/unjs/ungh) <br> 💛 Hosting sponsored by [Vercel](https://vercel.com/?utm_source=ungh)`,
+      description: `Unlimited access to GitHub API. <br><br> <div align="center"> <img src="/_thanks?1" alt="Sponsors" /> <br><br> ⭐ [Star on GitHub](https://github.com/unjs/ungh) <br> 💛 Hosting sponsored by [Vercel](https://vercel.com/?utm_source=ungh) </div>`,
       version: "1.0.0",
     },
   },

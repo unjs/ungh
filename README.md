@@ -310,7 +310,11 @@ Find one github user by email or other query.
 ## Sponsors
 
 <p align="center">
-  <img src="https://ungh.cc/_thanks" alt="Sponsors" />
+
+<img src="https://ungh.cc/_thanks?1" alt="Sponsors" />
+<br>
+💛 Hosting sponsored by <a href="https://vercel.com/?utm_source=ungh">Vercel</a>
+
 </p>
 
 ## License
