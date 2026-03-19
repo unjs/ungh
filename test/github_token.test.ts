@@ -132,8 +132,12 @@ describe("GHToken", () => {
 
   describe("validate", () => {
     let fetchSpy: ReturnType<typeof vi.spyOn>;
-    beforeEach(() => { fetchSpy = vi.spyOn(globalThis, "fetch"); });
-    afterEach(() => { fetchSpy.mockRestore(); });
+    beforeEach(() => {
+      fetchSpy = vi.spyOn(globalThis, "fetch");
+    });
+    afterEach(() => {
+      fetchSpy.mockRestore();
+    });
 
     it("updates status from /meta response", async () => {
       const resetEpoch = Math.floor(Date.now() / 1000) + 3600;
@@ -190,9 +194,24 @@ describe("GHToken", () => {
     it.each([
       { desc: "never validated", lastValidated: undefined, reset: undefined, expected: true },
       { desc: "recently validated", lastValidated: now - 1000, reset: undefined, expected: false },
-      { desc: "validated >1min ago", lastValidated: now - 61_000, reset: undefined, expected: true },
-      { desc: "stale but reset pending", lastValidated: now - 120_000, reset: now + 60_000, expected: false },
-      { desc: "stale and reset passed", lastValidated: now - 120_000, reset: now - 1000, expected: true },
+      {
+        desc: "validated >1min ago",
+        lastValidated: now - 61_000,
+        reset: undefined,
+        expected: true,
+      },
+      {
+        desc: "stale but reset pending",
+        lastValidated: now - 120_000,
+        reset: now + 60_000,
+        expected: false,
+      },
+      {
+        desc: "stale and reset passed",
+        lastValidated: now - 120_000,
+        reset: now - 1000,
+        expected: true,
+      },
     ])("$desc → $expected", ({ lastValidated, reset, expected }) => {
       const token = new GHToken("t");
       token._lastValidated = lastValidated;
@@ -209,11 +228,31 @@ describe("GHToken", () => {
       state: { valid?: boolean; remaining: number; limit: number; reset: number };
       clears: boolean;
     }>([
-      { desc: "valid=true, remaining=0, reset expired", state: { valid: true, remaining: 0, limit: 5000, reset: now - 1000 }, clears: true },
-      { desc: "valid=undefined, remaining=0, reset expired", state: { valid: undefined, remaining: 0, limit: 5000, reset: now - 1000 }, clears: true },
-      { desc: "valid=true, remaining=0, reset in future", state: { valid: true, remaining: 0, limit: 5000, reset: now + 60_000 }, clears: false },
-      { desc: "valid=true, remaining>0, reset expired", state: { valid: true, remaining: 100, limit: 5000, reset: now - 1000 }, clears: false },
-      { desc: "valid=false, remaining=0, reset expired", state: { valid: false, remaining: 0, limit: 5000, reset: now - 1000 }, clears: false },
+      {
+        desc: "valid=true, remaining=0, reset expired",
+        state: { valid: true, remaining: 0, limit: 5000, reset: now - 1000 },
+        clears: true,
+      },
+      {
+        desc: "valid=undefined, remaining=0, reset expired",
+        state: { valid: undefined, remaining: 0, limit: 5000, reset: now - 1000 },
+        clears: true,
+      },
+      {
+        desc: "valid=true, remaining=0, reset in future",
+        state: { valid: true, remaining: 0, limit: 5000, reset: now + 60_000 },
+        clears: false,
+      },
+      {
+        desc: "valid=true, remaining>0, reset expired",
+        state: { valid: true, remaining: 100, limit: 5000, reset: now - 1000 },
+        clears: false,
+      },
+      {
+        desc: "valid=false, remaining=0, reset expired",
+        state: { valid: false, remaining: 0, limit: 5000, reset: now - 1000 },
+        clears: false,
+      },
     ])("$desc → clears=$clears", ({ state, clears }) => {
       const token = new GHToken("t");
       token.valid = state.valid;
@@ -239,7 +278,12 @@ describe("GHToken", () => {
       { desc: "invalid with remaining", valid: false as const, remaining: 100, expected: false },
       { desc: "valid but exhausted", valid: true, remaining: 0, expected: false },
       { desc: "unvalidated (undefined)", valid: undefined, remaining: undefined, expected: false },
-      { desc: "valid, remaining undefined (defaults to 1)", valid: true, remaining: undefined, expected: true },
+      {
+        desc: "valid, remaining undefined (defaults to 1)",
+        valid: true,
+        remaining: undefined,
+        expected: true,
+      },
     ])("$desc → $expected", ({ valid, remaining, expected }) => {
       const token = new GHToken("t");
       token.valid = valid;
@@ -282,7 +326,9 @@ describe("GHToken", () => {
 
     it("toString includes type", () => {
       expect(new GHToken("ghp_abcdefghijklmnop").toString()).toBe("[GitHub pat token ghp_***mnop]");
-      expect(new GHToken("ghs_abcdefghijklmnop", { app: true }).toString()).toBe("[GitHub app token ghs_***mnop]");
+      expect(new GHToken("ghs_abcdefghijklmnop", { app: true }).toString()).toBe(
+        "[GitHub app token ghs_***mnop]",
+      );
     });
 
     it("toJSON returns serializable object", () => {
@@ -358,11 +404,19 @@ async function verifyJWTSignature(jwt: string, publicKey: CryptoKey) {
 function extractPkcs1FromPkcs8(pkcs8Der: ArrayBuffer): Uint8Array {
   const bytes = new Uint8Array(pkcs8Der);
   let offset = 1; // skip SEQUENCE tag
-  if (bytes[offset]! & 0x80) { offset += 1 + (bytes[offset]! & 0x7f); } else { offset += 1; }
+  if (bytes[offset]! & 0x80) {
+    offset += 1 + (bytes[offset]! & 0x7f);
+  } else {
+    offset += 1;
+  }
   offset += 3; // version INTEGER (02 01 00)
   offset += 15; // algorithmId SEQUENCE
   offset += 1; // OCTET STRING tag
-  if (bytes[offset]! & 0x80) { offset += 1 + (bytes[offset]! & 0x7f); } else { offset += 1; }
+  if (bytes[offset]! & 0x80) {
+    offset += 1 + (bytes[offset]! & 0x7f);
+  } else {
+    offset += 1;
+  }
   return bytes.slice(offset);
 }
 
@@ -416,7 +470,9 @@ describe("_createAppJWT", () => {
 // --- Token registry functions ---
 
 describe("getGHToken", () => {
-  beforeEach(() => { ghTokens.length = 0; });
+  beforeEach(() => {
+    ghTokens.length = 0;
+  });
 
   it("returns the token with highest remaining quota", () => {
     const t1 = new GHToken("tok1");
@@ -470,7 +526,9 @@ describe("ensureTokensValidated", () => {
     ghTokens.length = 0;
     ensureTokensValidated.reset();
   });
-  afterEach(() => { fetchSpy.mockRestore(); });
+  afterEach(() => {
+    fetchSpy.mockRestore();
+  });
 
   it("validates tokens until one is available", async () => {
     ghTokens.push(new GHToken("tok1"), new GHToken("tok2"));
@@ -502,7 +560,9 @@ describe("ensureAllTokensValidated", () => {
     ghTokens.length = 0;
     ensureAppToken.reset();
   });
-  afterEach(() => { fetchSpy.mockRestore(); });
+  afterEach(() => {
+    fetchSpy.mockRestore();
+  });
 
   it("validates all tokens", async () => {
     ghTokens.push(new GHToken("tok1"), new GHToken("tok2"));
@@ -520,7 +580,9 @@ describe("revalidateGHTokens", () => {
     fetchSpy = vi.spyOn(globalThis, "fetch");
     ghTokens.length = 0;
   });
-  afterEach(() => { fetchSpy.mockRestore(); });
+  afterEach(() => {
+    fetchSpy.mockRestore();
+  });
 
   it("revalidates stale tokens", async () => {
     const t = new GHToken("tok");
@@ -561,7 +623,9 @@ describe("acquireGHToken", () => {
     ghTokens.length = 0;
     ensureTokensValidated.reset();
   });
-  afterEach(() => { fetchSpy.mockRestore(); });
+  afterEach(() => {
+    fetchSpy.mockRestore();
+  });
 
   it("returns the best available token after validation", async () => {
     const t = new GHToken("tok");
@@ -614,8 +678,10 @@ describe("ensureAppToken (_refreshAppToken)", () => {
     { desc: "GH_APP_PRIVATE_KEY missing", id: "123", key: undefined },
     { desc: "both missing", id: undefined, key: undefined },
   ])("does nothing when $desc", async ({ id, key }) => {
-    if (id) process.env.GH_APP_ID = id; else delete process.env.GH_APP_ID;
-    if (key) process.env.GH_APP_PRIVATE_KEY = key; else delete process.env.GH_APP_PRIVATE_KEY;
+    if (id) process.env.GH_APP_ID = id;
+    else delete process.env.GH_APP_ID;
+    if (key) process.env.GH_APP_PRIVATE_KEY = key;
+    else delete process.env.GH_APP_PRIVATE_KEY;
     await ensureAppToken();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
