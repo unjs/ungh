@@ -786,8 +786,8 @@ packages:
   obug@2.1.1:
     resolution: {integrity: sha512-uTqF9MuPraAQ+IsnPf366RG4cP9RtUi7MLO1N3KEc+wb0a6yKpeL0lmk2IB1jY5KHPAlTc6T/JRdC/YqxHNwkQ==}
 
-  ocache@0.1.3:
-    resolution: {integrity: sha512-1YlRgsdPL+yTC/i0ztczEJXjJNvp0p8AuJN7/m02eX/zXVDICHPfI+5J4mfLN3d9hYnA1wWgOP5SFhnz+I+8rg==}
+  ocache@0.1.4:
+    resolution: {integrity: sha512-e7geNdWjxSnvsSgvLuPvgKgu7ubM10ZmTPOgpr7mz2BXYtvjMKTiLhjFi/gWU8chkuP6hNkZBsa9LzOusyaqkQ==}
 
   ofetch@2.0.0-alpha.3:
     resolution: {integrity: sha512-zpYTCs2byOuft65vI3z43Dd6iSdFbOZZLb9/d21aCpx2rGastVU9dOCv0lu4ykc1Ur1anAYjDi3SUvR0vq50JA==}
@@ -1541,7 +1541,7 @@ snapshots:
       h3: 2.0.1-rc.16(crossws@0.4.4(srvx@0.11.12))
       hookable: 6.1.0
       nf3: 0.3.11
-      ocache: 0.1.3
+      ocache: 0.1.4
       ofetch: 2.0.0-alpha.3
       ohash: 2.0.11
       rolldown: 1.0.0-rc.10
@@ -1582,7 +1582,7 @@ snapshots:
 
   obug@2.1.1: {}
 
-  ocache@0.1.3:
+  ocache@0.1.4:
     dependencies:
       ohash: 2.0.11
 
