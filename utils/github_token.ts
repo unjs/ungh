@@ -1,4 +1,3 @@
-import { useRuntimeConfig } from "nitro/runtime-config";
 import { ofetch } from "ofetch";
 
 const REVALIDATE_INTERVAL = 60_000; // 1 min
@@ -19,6 +18,31 @@ export class GHToken {
     this.token = token;
     this._app = opts?.app;
     this._appInstallationId = opts?.appInstallationId;
+  }
+
+  get maskedToken() {
+    return this.token.length > 8
+      ? this.token.slice(0, 4) + "***" + this.token.slice(-4)
+      : "***";
+  }
+
+  [Symbol.for("nodejs.util.inspect.custom")]() {
+    return this.toString();
+  }
+
+  toJSON() {
+    return {
+      token: this.maskedToken,
+      valid: this.valid,
+      remaining: this.remaining,
+      limit: this.limit,
+      reset: this.reset,
+    };
+  }
+
+  toString() {
+    const type = this._app ? "app" : "pat";
+    return `[GitHub ${type} token ${this.maskedToken}]`;
   }
 
   updateStatus(res: Response) {
@@ -75,46 +99,35 @@ export class GHToken {
 
 // --- Token registry ---
 
-const runtimeConfig = useRuntimeConfig();
 
 /** All registered GitHub tokens (PAT and App-generated). */
-export const ghTokens: GHToken[] = ((runtimeConfig.GH_TOKEN as string) || "")
+export const ghTokens: GHToken[] = (process.env.GH_TOKEN || "")
   .split(",")
   .map((t) => t.trim())
   .filter(Boolean)
   .map((t) => new GHToken(t));
 
-let _validatePromise: Promise<void> | undefined;
-
-/** Validates all tokens and bootstraps App tokens. Use for status page. Idempotent. */
-export async function ensureAllTokensValidated() {
-  if (!_validateAllPromise) {
-    _validateAllPromise = Promise.all([
-      Promise.all(ghTokens.map((t) => t.validate())),
-      ensureAppToken(),
-    ]).then(() => {});
-  }
-  await _validateAllPromise;
+/** Validates all tokens and bootstraps App tokens. Use for status page. Idempotent (once). */
+export const ensureAllTokensValidated = idempotent(async () => {
+  await Promise.all([
+    Promise.all(ghTokens.map((t) => t.validate())),
+    ensureAppToken(),
+  ]);
   await revalidateGHTokens();
-}
+});
 
-let _validateAllPromise: Promise<void> | undefined;
-
-/** Validates tokens until one is available, then continues the rest in background. Idempotent. */
-export async function ensureTokensValidated() {
-  if (!_validatePromise) {
-    _validatePromise = _validateUntilOneAvailable();
-  }
-  await _validatePromise;
+/** Validates tokens until one is available, then continues the rest in background. Idempotent (once). */
+export const ensureTokensValidated = idempotent(async () => {
+  await _validateUntilOneAvailable();
   if (!getGHToken()) {
     await revalidateGHTokens();
   }
-}
+});
 
 async function _validateUntilOneAvailable() {
   // Race PAT validations and App token bootstrap — resolve as soon as any token is available
   const patCount = ghTokens.length;
-  const hasAppConfig = !!(runtimeConfig.GH_APP_ID && runtimeConfig.GH_APP_PRIVATE_KEY);
+  const hasAppConfig = !!(process.env.GH_APP_ID && process.env.GH_APP_PRIVATE_KEY);
   const totalTasks = patCount + (hasAppConfig ? 1 : 0);
 
   if (totalTasks === 0) return;
@@ -143,22 +156,12 @@ async function _validateUntilOneAvailable() {
   });
 }
 
-let _revalidatePromise: Promise<boolean> | undefined;
-
 /**
  * Revalidates only tokens that haven't been validated in the last minute.
- * Concurrent callers share the same in-flight promise.
+ * Concurrent callers share the same in-flight promise (coalesced, not once).
  * Returns true if any tokens were revalidated.
  */
-export function revalidateGHTokens() {
-  if (_revalidatePromise) {
-    return _revalidatePromise;
-  }
-  _revalidatePromise = _doRevalidateGHTokens().finally(() => {
-    _revalidatePromise = undefined;
-  });
-  return _revalidatePromise;
-}
+export const revalidateGHTokens = idempotent(_doRevalidateGHTokens, { once: false });
 
 async function _doRevalidateGHTokens() {
   const now = Date.now();
@@ -181,6 +184,16 @@ export function getGHToken() {
     .sort((a, b) => (b.remaining ?? 1) - (a.remaining ?? 1))[0];
 }
 
+/** Ensures tokens are validated and returns the best available one. Revalidates if needed. */
+export async function acquireGHToken(): Promise<GHToken | undefined> {
+  await ensureTokensValidated();
+  let token = getGHToken();
+  if (!token && (await revalidateGHTokens())) {
+    token = getGHToken();
+  }
+  return token;
+}
+
 /** Formats a duration in milliseconds to a human-readable string (e.g. `"5m"`, `"1h30m"`). */
 export function formatDuration(ms: number) {
   const minutes = Math.round(ms / 60_000);
@@ -193,22 +206,15 @@ export function formatDuration(ms: number) {
 
 // --- GitHub App token ---
 
-let _appTokenPromise: Promise<void> | undefined;
-
-/** Bootstraps GitHub App installation tokens if App credentials are configured. Idempotent. */
-export function ensureAppToken() {
-  if (!_appTokenPromise) {
-    _appTokenPromise = _refreshAppToken();
-  }
-  return _appTokenPromise;
-}
+/** Bootstraps GitHub App installation tokens if App credentials are configured. Idempotent (once). */
+export const ensureAppToken = idempotent(_refreshAppToken);
 
 async function _refreshAppToken() {
   try {
-    const appId = runtimeConfig.GH_APP_ID as string;
-    const privateKey = runtimeConfig.GH_APP_PRIVATE_KEY as string;
+    const appId = process.env.GH_APP_ID;
+    const privateKey = process.env.GH_APP_PRIVATE_KEY;
     if (!appId || !privateKey) {
-      _appTokenPromise = undefined;
+      ensureAppToken.reset();
       return;
     }
 
@@ -283,11 +289,12 @@ async function _refreshAppToken() {
 
     if (earliestRefresh < Number.POSITIVE_INFINITY) {
       setTimeout(() => {
-        _appTokenPromise = _refreshAppToken();
+        ensureAppToken.reset();
+        ensureAppToken();
       }, earliestRefresh);
     }
   } catch (error) {
-    _appTokenPromise = undefined;
+    ensureAppToken.reset();
     console.error("Failed to initialize GitHub App tokens:", error);
   }
 }
@@ -385,4 +392,32 @@ function _concat(...arrays: Uint8Array[]): Uint8Array {
     offset += a.length;
   }
   return result;
+}
+
+/**
+ * Wraps an async function so concurrent calls share a single in-flight promise.
+ *
+ * - `once: true` (default) — runs at most once; subsequent calls return the cached result.
+ * - `once: false` — concurrent calls share one execution, but after it settles a new call triggers a fresh run.
+ *
+ * Returns a callable with a `.reset()` method to clear the cached promise.
+ */
+function idempotent<T>(
+  fn: () => Promise<T>,
+  opts?: { once?: boolean },
+): (() => Promise<T>) & { reset: () => void } {
+  const once = opts?.once !== false;
+  let pending: Promise<T> | undefined;
+  const wrapped = () => {
+    if (!pending) {
+      pending = fn().finally(() => {
+        if (!once) pending = undefined;
+      });
+    }
+    return pending;
+  };
+  wrapped.reset = () => {
+    pending = undefined;
+  };
+  return wrapped;
 }

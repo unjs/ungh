@@ -5,14 +5,12 @@ import { HTTPError } from "nitro/h3";
 import {
   GHToken,
   ghTokens,
-  getGHToken,
+  acquireGHToken,
   formatDuration,
-  ensureTokensValidated,
   ensureAllTokensValidated,
-  revalidateGHTokens,
 } from "~/utils/github_token";
 
-export { GHToken, ghTokens, ensureTokensValidated, ensureAllTokensValidated, formatDuration };
+export { GHToken, ghTokens, ensureAllTokensValidated, formatDuration };
 
 const commonCacheOptions: CacheOptions = {
   group: "gh",
@@ -28,10 +26,7 @@ const cacheOptions = (name: string): CacheOptions => ({
 
 export const ghFetch = defineCachedFunction(
   async <T = any>(url: string, opts: FetchOptions = {}) => {
-    let token = getGHToken();
-    if (!token && (await revalidateGHTokens())) {
-      token = getGHToken();
-    }
+    const token = await acquireGHToken();
     if (!token) {
       const soonestReset = ghTokens
         .filter((t) => t.valid && t.reset)
