@@ -55,11 +55,8 @@ async function validateGHToken(token: GHToken) {
       `GitHub token ${token.valid ? "validated" : "invalid"} (${res.status}): ${token.remaining}/${token.limit}${resource ? ` [${resource}]` : ""}${resetInfo}`,
     );
   } catch (error) {
+    // Preserve last-known token state on transport errors (DNS/TLS/timeout)
     console.error("Error validating GitHub token:", error);
-    token.valid = false;
-    token.remaining = 0;
-    token.limit = 0;
-    token._lastValidated = Date.now();
   }
 }
 
@@ -70,11 +67,24 @@ async function validateGHTokens() {
 
 const REVALIDATE_INTERVAL = 60_000; // 1 min
 
+let _revalidatePromise: Promise<boolean> | undefined;
+
 /**
  * Revalidates only tokens that haven't been validated in the last minute.
+ * Concurrent callers share the same in-flight promise.
  * Returns true if any tokens were revalidated.
  */
-export async function revalidateGHTokens() {
+export function revalidateGHTokens() {
+  if (_revalidatePromise) {
+    return _revalidatePromise;
+  }
+  _revalidatePromise = _doRevalidateGHTokens().finally(() => {
+    _revalidatePromise = undefined;
+  });
+  return _revalidatePromise;
+}
+
+async function _doRevalidateGHTokens() {
   ensureTokens();
   const now = Date.now();
   const staleTokens = ghTokens.filter(
