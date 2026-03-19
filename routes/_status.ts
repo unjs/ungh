@@ -1,6 +1,6 @@
 import { defineRouteMeta, defineHandler } from "nitro";
 import { html } from "nitro/h3";
-import { ghTokens, ensureTokensValidated, formatDuration } from "~/utils/github";
+import { ghTokens, ensureAllTokensValidated, formatDuration } from "~/utils/github";
 
 defineRouteMeta({
   openAPI: {
@@ -9,7 +9,7 @@ defineRouteMeta({
 });
 
 export default defineHandler(async () => {
-  await ensureTokensValidated();
+  await ensureAllTokensValidated();
 
   const tokens = ghTokens.map((t, i) => {
     const remaining = t.remaining ?? 0;

@@ -1,5 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from "vitest";
 import { GHToken } from "~/utils/github_token";
+import {
+  formatDuration,
+  _base64url,
+  _createAppJWT,
+  getGHToken,
+  ghTokens,
+  ensureTokensValidated,
+  ensureAllTokensValidated,
+  revalidateGHTokens,
+} from "~/utils/github_token";
 
 function mockResponse(status: number, headers: Record<string, string> = {}): Response {
   return new Response(null, { status, headers });
@@ -256,5 +266,349 @@ describe("GHToken", () => {
       // remaining undefined → defaults to 1
       expect(token.available).toBe(true);
     });
+  });
+
+  describe("constructor", () => {
+    it("sets app and appInstallationId from opts", () => {
+      const token = new GHToken("tok", { app: true, appInstallationId: "123" });
+      expect(token._app).toBe(true);
+      expect(token._appInstallationId).toBe("123");
+    });
+
+    it("defaults optional fields to undefined", () => {
+      const token = new GHToken("tok");
+      expect(token.valid).toBeUndefined();
+      expect(token.remaining).toBeUndefined();
+      expect(token.limit).toBeUndefined();
+      expect(token.reset).toBeUndefined();
+      expect(token._lastValidated).toBeUndefined();
+      expect(token._app).toBeUndefined();
+      expect(token._appInstallationId).toBeUndefined();
+    });
+  });
+});
+
+describe("formatDuration", () => {
+  it("returns '<1m' for durations under 1 minute", () => {
+    expect(formatDuration(0)).toBe("<1m");
+    expect(formatDuration(29_000)).toBe("<1m");
+  });
+
+  it("returns minutes for durations under 1 hour", () => {
+    expect(formatDuration(60_000)).toBe("1m");
+    expect(formatDuration(5 * 60_000)).toBe("5m");
+    expect(formatDuration(59 * 60_000)).toBe("59m");
+  });
+
+  it("returns hours for exact hour durations", () => {
+    expect(formatDuration(60 * 60_000)).toBe("1h");
+    expect(formatDuration(2 * 60 * 60_000)).toBe("2h");
+  });
+
+  it("returns hours and minutes for mixed durations", () => {
+    expect(formatDuration(90 * 60_000)).toBe("1h30m");
+    expect(formatDuration(125 * 60_000)).toBe("2h5m");
+  });
+});
+
+describe("_base64url", () => {
+  it("encodes a simple string", () => {
+    const encoded = _base64url("hello");
+    // base64url of "hello" = "aGVsbG8"
+    expect(encoded).toBe("aGVsbG8");
+  });
+
+  it("produces no padding characters", () => {
+    const encoded = _base64url("a");
+    expect(encoded).not.toContain("=");
+  });
+
+  it("replaces + and / with url-safe chars", () => {
+    // Use a string that produces + or / in standard base64
+    const encoded = _base64url("subjects?_d");
+    expect(encoded).not.toContain("+");
+    expect(encoded).not.toContain("/");
+  });
+
+  it("encodes JSON payloads (JWT use case)", () => {
+    const json = JSON.stringify({ alg: "RS256", typ: "JWT" });
+    const encoded = _base64url(json);
+    expect(encoded).toMatch(/^[A-Za-z0-9_-]+$/);
+    // Verify round-trip
+    const decoded = atob(encoded.replace(/-/g, "+").replace(/_/g, "/"));
+    expect(JSON.parse(decoded)).toEqual({ alg: "RS256", typ: "JWT" });
+  });
+});
+
+describe("_createAppJWT", () => {
+  let keyPair: CryptoKeyPair;
+  let pkcs8Pem: string;
+
+  beforeAll(async () => {
+    keyPair = await crypto.subtle.generateKey(
+      {
+        name: "RSASSA-PKCS1-v1_5",
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: "SHA-256",
+      },
+      true,
+      ["sign", "verify"],
+    );
+    const pkcs8 = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+    pkcs8Pem = `-----BEGIN PRIVATE KEY-----\n${btoa(String.fromCharCode(...new Uint8Array(pkcs8)))}\n-----END PRIVATE KEY-----`;
+  });
+
+  it("creates a valid 3-part JWT with PKCS#8 key", async () => {
+    const jwt = await _createAppJWT("12345", pkcs8Pem);
+    const parts = jwt.split(".");
+    expect(parts).toHaveLength(3);
+
+    const header = JSON.parse(atob(parts[0]!.replace(/-/g, "+").replace(/_/g, "/")));
+    expect(header).toEqual({ alg: "RS256", typ: "JWT" });
+
+    const payload = JSON.parse(atob(parts[1]!.replace(/-/g, "+").replace(/_/g, "/")));
+    expect(payload.iss).toBe("12345");
+    expect(payload.exp).toBeGreaterThan(payload.iat);
+
+    const data = new TextEncoder().encode(`${parts[0]}.${parts[1]}`);
+    const sig = Uint8Array.from(atob(parts[2]!.replace(/-/g, "+").replace(/_/g, "/")), (c) =>
+      c.charCodeAt(0),
+    );
+    const valid = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", keyPair.publicKey, sig, data);
+    expect(valid).toBe(true);
+  });
+
+  it("handles PEM with escaped newlines", async () => {
+    // Simulate env var with literal \n
+    const escapedPem = pkcs8Pem.replace(/\n/g, "\\n");
+    const jwt = await _createAppJWT("99", escapedPem);
+    expect(jwt.split(".")).toHaveLength(3);
+  });
+
+  it("handles PKCS#1 (RSA PRIVATE KEY) format", async () => {
+    // Export as PKCS#8, then manually strip the PKCS#8 wrapper to get PKCS#1
+    // We can't easily get raw PKCS#1 from WebCrypto, so we test via the
+    // _pemToKeyData path by providing a PKCS#1-style PEM header
+    const pkcs8Der = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+    const pkcs8Bytes = new Uint8Array(pkcs8Der);
+
+    // PKCS#8 wraps PKCS#1 as: SEQUENCE { version, algorithmId, OCTET STRING { pkcs1 } }
+    // We need to extract the PKCS#1 content from the OCTET STRING
+    // Skip outer SEQUENCE tag+length, version (3 bytes), algorithmId (15 bytes)
+    // then parse the OCTET STRING to get the inner PKCS#1 bytes
+    let offset = 0;
+    // Skip SEQUENCE tag
+    offset += 1;
+    // Parse length
+    if (pkcs8Bytes[offset]! & 0x80) {
+      const numLenBytes = pkcs8Bytes[offset]! & 0x7f;
+      offset += 1 + numLenBytes;
+    } else {
+      offset += 1;
+    }
+    // Skip version INTEGER (02 01 00)
+    offset += 3;
+    // Skip algorithmId SEQUENCE (30 0d ...)
+    offset += 15;
+    // Now at OCTET STRING tag (04)
+    offset += 1;
+    // Parse OCTET STRING length
+    if (pkcs8Bytes[offset]! & 0x80) {
+      const numLenBytes = pkcs8Bytes[offset]! & 0x7f;
+      offset += 1 + numLenBytes;
+    } else {
+      offset += 1;
+    }
+    // The rest is PKCS#1 content
+    const pkcs1Bytes = pkcs8Bytes.slice(offset);
+    const pkcs1Base64 = btoa(String.fromCharCode(...pkcs1Bytes));
+    const pkcs1Pem = `-----BEGIN RSA PRIVATE KEY-----\n${pkcs1Base64}\n-----END RSA PRIVATE KEY-----`;
+
+    const jwt = await _createAppJWT("42", pkcs1Pem);
+    const parts = jwt.split(".");
+    expect(parts).toHaveLength(3);
+
+    // Verify the signature is valid (proves PKCS#1 -> PKCS#8 conversion worked)
+    const data = new TextEncoder().encode(`${parts[0]}.${parts[1]}`);
+    const sig = Uint8Array.from(atob(parts[2]!.replace(/-/g, "+").replace(/_/g, "/")), (c) =>
+      c.charCodeAt(0),
+    );
+    const valid = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", keyPair.publicKey, sig, data);
+    expect(valid).toBe(true);
+  });
+});
+
+describe("getGHToken", () => {
+  it("returns the token with highest remaining quota", () => {
+    // Clear and populate ghTokens
+    ghTokens.length = 0;
+    const t1 = new GHToken("tok1");
+    t1.valid = true;
+    t1.remaining = 100;
+    const t2 = new GHToken("tok2");
+    t2.valid = true;
+    t2.remaining = 500;
+    ghTokens.push(t1, t2);
+
+    expect(getGHToken()).toBe(t2);
+  });
+
+  it("returns undefined when no tokens are available", () => {
+    ghTokens.length = 0;
+    const t = new GHToken("tok");
+    t.valid = false;
+    ghTokens.push(t);
+
+    expect(getGHToken()).toBeUndefined();
+  });
+
+  it("clears expired limits before selecting", () => {
+    ghTokens.length = 0;
+    const t = new GHToken("tok");
+    t.valid = true;
+    t.remaining = 0;
+    t.limit = 5000;
+    t.reset = Date.now() - 1000; // expired
+    ghTokens.push(t);
+
+    const result = getGHToken();
+    // After clearing, remaining becomes undefined → available (remaining ?? 1 > 0)
+    expect(result).toBe(t);
+    expect(t.remaining).toBeUndefined();
+  });
+
+  it("skips exhausted tokens that have not expired", () => {
+    ghTokens.length = 0;
+    const t = new GHToken("tok");
+    t.valid = true;
+    t.remaining = 0;
+    t.limit = 5000;
+    t.reset = Date.now() + 60_000; // still in the future
+    ghTokens.push(t);
+
+    expect(getGHToken()).toBeUndefined();
+  });
+});
+
+describe("ensureTokensValidated", () => {
+  let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    fetchSpy = vi.spyOn(globalThis, "fetch");
+    ghTokens.length = 0;
+  });
+
+  afterEach(() => {
+    fetchSpy.mockRestore();
+  });
+
+  it("validates tokens and stops after first available", async () => {
+    const t1 = new GHToken("tok1");
+    const t2 = new GHToken("tok2");
+    ghTokens.push(t1, t2);
+
+    fetchSpy.mockResolvedValue(mockResponse(200, rateLimitHeaders(4000, 5000)));
+
+    await ensureTokensValidated();
+
+    expect(t1.valid).toBe(true);
+    expect(t1.remaining).toBe(4000);
+  });
+
+  it("falls back to revalidation when no token is available after validation", async () => {
+    const t = new GHToken("tok");
+    ghTokens.push(t);
+
+    // Validate returns 401 (invalid) — token not available, triggers revalidation path
+    fetchSpy.mockResolvedValue(mockResponse(401, rateLimitHeaders(0, 0)));
+
+    await ensureTokensValidated();
+
+    // Initial validation marks invalid, revalidation is attempted
+    expect(t.valid).toBe(false);
+    expect(fetchSpy.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("works with no tokens (empty registry)", async () => {
+    await ensureTokensValidated();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("ensureAllTokensValidated", () => {
+  let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    fetchSpy = vi.spyOn(globalThis, "fetch");
+    ghTokens.length = 0;
+  });
+
+  afterEach(() => {
+    fetchSpy.mockRestore();
+  });
+
+  it("validates all tokens", async () => {
+    const t1 = new GHToken("tok1");
+    const t2 = new GHToken("tok2");
+    ghTokens.push(t1, t2);
+
+    fetchSpy.mockResolvedValue(mockResponse(200, rateLimitHeaders(3000, 5000)));
+
+    await ensureAllTokensValidated();
+
+    expect(t1.valid).toBe(true);
+    expect(t2.valid).toBe(true);
+  });
+});
+
+describe("revalidateGHTokens", () => {
+  let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    fetchSpy = vi.spyOn(globalThis, "fetch");
+    ghTokens.length = 0;
+  });
+
+  afterEach(() => {
+    fetchSpy.mockRestore();
+  });
+
+  it("revalidates stale tokens", async () => {
+    const t = new GHToken("tok");
+    t.valid = true;
+    t._lastValidated = Date.now() - 120_000; // stale
+    ghTokens.push(t);
+
+    fetchSpy.mockResolvedValue(mockResponse(200, rateLimitHeaders(4500, 5000)));
+
+    const result = await revalidateGHTokens();
+    expect(result).toBe(true);
+    expect(t.remaining).toBe(4500);
+  });
+
+  it("returns false when no tokens are stale and one is available", async () => {
+    const t = new GHToken("tok");
+    t.valid = true;
+    t.remaining = 1000;
+    t._lastValidated = Date.now(); // fresh
+    ghTokens.push(t);
+
+    const result = await revalidateGHTokens();
+    expect(result).toBe(false);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("coalesces concurrent calls", async () => {
+    const t = new GHToken("tok");
+    t._lastValidated = Date.now() - 120_000;
+    ghTokens.push(t);
+
+    fetchSpy.mockResolvedValue(mockResponse(200, rateLimitHeaders(4000, 5000)));
+
+    const [r1, r2] = await Promise.all([revalidateGHTokens(), revalidateGHTokens()]);
+    expect(r1).toBe(r2);
+    // Only one set of validations should have happened
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 });

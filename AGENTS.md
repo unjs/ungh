@@ -2,6 +2,10 @@
 
 This project is based on [Nitro](https://nitro.build) v3, [h3](https://h3.dev/), [Vite](https://vite.dev/) and [rolldown](https://rolldown.rs/).
 
+## Deep Dives
+
+- @.agents/GH_API.md — GitHub API token system, rate-limit tracking, cached fetch layer
+
 ## Project Structure
 
 `routes/` contains route handlers. `utils/` has shared utilities (`github.ts` for GitHub API, `markdown.ts` for markdown processing). `types/` for shared types. `public/` holds static assets. Config: `nitro.config.ts` (storage, routeRules, openAPI), `tsconfig.json` (extends `nitro/tsconfig`, `~/*` path alias).
