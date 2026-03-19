@@ -45,13 +45,17 @@ export default defineHandler(async () => {
         : exhausted
           ? ' <span class="status status-exhausted">exhausted</span>'
           : ' <span class="status status-valid">ok</span>';
+      const timerOverlay = exhausted
+        ? `<div class="timer-overlay"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${t.reset ? t.reset : ""}</div>`
+        : "";
       return `
-      <div class="token-cell">
+      <div class="token-cell${exhausted ? " exhausted" : ""}">
         <div class="token-name">Token #${t.index + 1}${statusLabel}</div>
         <div class="bar-track bar-sm">
           <div class="bar-fill ${colorClass}" style="width:${!t.valid ? 0 : usedPct}%"></div>
         </div>
         <div class="token-meta">${label}${resetInfo}</div>
+        ${timerOverlay}
       </div>`;
     })
     .join("");
@@ -83,7 +87,11 @@ export default defineHandler(async () => {
     .bar-fill.red { background: #ef4444; }
     .bar-fill.gray { background: #333; }
     .token-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
-    .token-cell { background: #1a1a1a; border: 1px solid #1e1e1e; border-radius: 8px; padding: 12px; }
+    .token-cell { background: #1a1a1a; border: 1px solid #1e1e1e; border-radius: 8px; padding: 12px; position: relative; overflow: hidden; }
+    .token-cell.exhausted .bar-fill { background: #333; }
+    .token-cell.exhausted::after { content: ''; position: absolute; inset: 0; background: rgba(30,30,30,0.7); border-radius: 8px; }
+    .token-cell.exhausted .timer-overlay { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #888; font-size: 12px; font-variant-numeric: tabular-nums; gap: 4px; }
+    .token-cell.exhausted .timer-overlay svg { opacity: 0.6; }
     .token-name { color: #ccc; font-size: 13px; font-variant-numeric: tabular-nums; margin-bottom: 8px; }
     .token-meta { color: #666; font-size: 11px; font-variant-numeric: tabular-nums; margin-top: 8px; }
     .status { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 4px; }
