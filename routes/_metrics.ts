@@ -3,8 +3,7 @@ import { ghTokens, ensureAllTokensValidated } from "~/utils/github_token";
 
 defineRouteMeta({
   openAPI: {
-    description:
-      "Prometheus/OpenMetrics metrics endpoint for GitHub token rate limits.",
+    description: "Prometheus/OpenMetrics metrics endpoint for GitHub token rate limits.",
   },
 });
 
