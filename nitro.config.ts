@@ -17,6 +17,10 @@ export default defineNitroConfig({
       cache: false,
       basicAuth: parseBasicAuth(process.env.STATUS_AUTH) || false,
     },
+    "/_metrics": {
+      cache: false,
+      basicAuth: parseBasicAuth(process.env.STATUS_AUTH) || false,
+    },
     // Backward compatibility for changelogen
     "/user/find/**": { proxy: "/users/find/**" },
   },
