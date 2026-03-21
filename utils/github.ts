@@ -7,7 +7,8 @@ export const commonCacheOptions: CacheOptions = {
   group: "gh",
   maxAge: 60 * 60 * 6, // 6 hours
   staleMaxAge: 60 * 60 * 48, // 48 hours
-  base: ["/cache", "/redis"],
+  // base: ["/cache", "/redis"],
+  base: ["/cache"],
 };
 
 const cacheOptions = (name: string): CacheOptions => ({
