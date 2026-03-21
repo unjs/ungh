@@ -52,7 +52,7 @@ export default defineCachedHandler(
     event.res.headers.set("content-type", "image/svg+xml");
     return await _renderSVG(users);
   },
-  { maxAge: 30 * 60, group: "gh", name: "thanks" },
+  { maxAge: 60 * 60 * 24, group: "gh", name: "thanks" },
 );
 
 // --- Internal ---
