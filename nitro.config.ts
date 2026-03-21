@@ -13,7 +13,7 @@ export default defineNitroConfig({
       // 6 hours in production, no cache in development
       isr: isProduction ? 60 * 60 * 6 : false,
       cors: true,
-      headers: { "access-control-max-age": "21600" }, // 6 hours
+      headers: isProduction ? { "access-control-max-age": "21600" } : {}, // 6 hours
     },
     "/_status": {
       cache: false,
