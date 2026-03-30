@@ -58,8 +58,8 @@ export class GHToken {
         Authorization: `token ${this.token}`,
       },
     });
-    this.valid = res.ok;
-    if (this.valid) {
+    this.valid = res.status !== 401;
+    if (res.ok) {
       const data = await res.json();
       this.remaining = data.resources.core.remaining;
       this.limit = data.resources.core.limit;
