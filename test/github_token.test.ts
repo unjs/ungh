@@ -599,7 +599,7 @@ describe("ensureAllTokensValidated", () => {
 
   it("validates all tokens", async () => {
     ghTokens.push(new GHToken("tok1"), new GHToken("tok2"));
-    fetchSpy.mockResolvedValue(mockResponse(200, rateLimitHeaders(3000, 5000)));
+    fetchSpy.mockResolvedValue(mockRateLimitResponse(3000, 5000));
     await ensureAllTokensValidated();
     expect(ghTokens[0]!.valid).toBe(true);
     expect(ghTokens[1]!.valid).toBe(true);
@@ -641,7 +641,7 @@ describe("revalidateGHTokens", () => {
     const t = new GHToken("tok");
     t._lastValidated = Date.now() - 120_000;
     ghTokens.push(t);
-    fetchSpy.mockResolvedValue(mockResponse(200, rateLimitHeaders(4000, 5000)));
+    fetchSpy.mockResolvedValue(mockRateLimitResponse(4000, 5000));
     const [r1, r2] = await Promise.all([revalidateGHTokens(), revalidateGHTokens()]);
     expect(r1).toBe(r2);
     expect(fetchSpy).toHaveBeenCalledTimes(1);
@@ -663,14 +663,14 @@ describe("acquireGHToken", () => {
   it("returns the best available token after validation", async () => {
     const t = new GHToken("tok");
     ghTokens.push(t);
-    fetchSpy.mockResolvedValue(mockResponse(200, rateLimitHeaders(4000, 5000)));
+    fetchSpy.mockResolvedValue(mockRateLimitResponse(4000, 5000));
     expect(await acquireGHToken()).toBe(t);
     expect(t.valid).toBe(true);
   });
 
   it("returns undefined when all tokens are invalid", async () => {
     ghTokens.push(new GHToken("tok"));
-    fetchSpy.mockResolvedValue(mockResponse(401, rateLimitHeaders(0, 0)));
+    fetchSpy.mockResolvedValue(mockResponse(401));
     expect(await acquireGHToken()).toBeUndefined();
   });
 
@@ -681,9 +681,9 @@ describe("acquireGHToken", () => {
     fetchSpy.mockImplementation(async () => {
       callCount++;
       if (callCount <= 1) {
-        return mockResponse(200, rateLimitHeaders(0, 5000, Math.floor(Date.now() / 1000) - 1));
+        return mockRateLimitResponse(0, 5000, Math.floor(Date.now() / 1000) - 1);
       }
-      return mockResponse(200, rateLimitHeaders(4000, 5000));
+      return mockRateLimitResponse(4000, 5000);
     });
     expect(await acquireGHToken()).toBe(t);
   });
