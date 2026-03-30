@@ -23,17 +23,17 @@ Two files handle all GitHub API interaction:
 ## Token Lifecycle
 
 ```
-new GHToken(token)          -> valid=undefined, remaining=undefined
+new GHToken(token)                      -> valid=undefined, remaining=undefined
   |
-validate()                  -> calls GET /meta, sets valid/remaining/limit/reset
+validate()                              -> calls GET /rate_limit, sets valid/remaining/limit/reset
   |
-updateStatus(response)      -> called on every ghFetch response to keep rate limits current
+updateStatusFromResponse(response)      -> called on every ghFetch response to keep rate limits current
   |
-isStale()                   -> true if: no lastValidated, or >1min since last validation
-                               (skips revalidation if reset is still in the future)
+isStale()                               -> true if: no lastValidated, or >1min since last validation
+                                           (skips revalidation if reset is still in the future)
   |
-clearExpiredLimits()        -> once reset time passes, clears remaining/limit/reset
-                               so the token becomes available again (remaining ?? 1 > 0)
+clearExpiredLimits()                    -> once reset time passes, clears remaining/limit/reset
+                                           so the token becomes available again (remaining ?? 1 > 0)
 ```
 
 ## Token Acquisition (`acquireGHToken`)
@@ -60,7 +60,7 @@ Subsequent requests rely on `revalidateGHTokens()` (called from `acquireGHToken`
 
 Runs once via `idempotent()` wrapper (`once: true`):
 
-1. Validate all PAT tokens in parallel (each calls GET /meta — costs 1 API request)
+1. Validate all PAT tokens in parallel (each calls GET /rate_limit — costs 0 API request)
 2. Bootstrap App tokens (JWT -> list installations -> create installation tokens)
 
 ## Revalidation (`revalidateGHTokens`)
@@ -75,7 +75,7 @@ Runs once via `idempotent()` wrapper (`once: true`):
 - Wraps `fetch` with GitHub auth headers
 - Uses `defineCachedFunction` (6h maxAge, 12h staleMaxAge, no SWR)
 - Calls `acquireGHToken()` to get a token; if none returned, throws 403 with diagnostic info (invalid count, exhausted count, soonest reset time)
-- On every response, updates the token's rate limit via `onResponse` → `token.updateStatus()`
+- On every response, updates the token's rate limit via `onResponse` → `token.updateStatusFromResponse()`
 - Cache validation rejects empty arrays and zero-count results
 
 ## Helper Endpoints
@@ -104,5 +104,5 @@ Used by: `ensureTokensValidated` (once), `ensureAllTokensValidated` (once), `ens
 - `remaining ?? 1` in `available` getter — treats never-checked tokens as available (optimistic until proven otherwise)
 - App token refresh is self-scheduling via `setTimeout`, not driven by requests
 - Transport errors in `validate()` preserve last-known state (no flip to invalid)
-- `updateStatus()` only updates `remaining`/`limit`/`reset` when their respective headers are present — avoids losing known state on responses lacking rate limit headers
+- `updateStatusFromResponse()` only updates `remaining`/`limit`/`reset` when their respective headers are present — avoids losing known state on responses lacking rate limit headers
 - `isStale()` always returns `true` for never-validated tokens (`_lastValidated` undefined), even if `reset` is somehow set — prevents edge case where a token could become permanently non-revalidatable

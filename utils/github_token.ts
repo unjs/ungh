@@ -41,7 +41,7 @@ export class GHToken {
     return `[GitHub ${type} token ${this.maskedToken}]`;
   }
 
-  updateStatus(res: Response) {
+  updateStatusFromResponse(res: Response) {
     this.valid = res.status !== 401;
     const remaining = res.headers.get("x-ratelimit-remaining");
     const limit = res.headers.get("x-ratelimit-limit");
@@ -51,21 +51,29 @@ export class GHToken {
     if (resetEpoch) this.reset = Number.parseInt(resetEpoch) * 1000;
   }
 
-  /** NOTE: Each call consumes one API request to fetch rate limit info. */
+  async updateStatusFromRateLimitEndpoint() {
+    const res = await fetch("https://api.github.com/rate_limit", {
+      headers: {
+        "User-Agent": "fetch",
+        Authorization: `token ${this.token}`,
+      },
+    });
+    this.valid = res.ok;
+    if (this.valid) {
+      const data = await res.json();
+      this.remaining = data.resources.core.remaining;
+      this.limit = data.resources.core.limit;
+      this.reset = data.resources.core.reset * 1000;
+    }
+  }
+
   async validate() {
     try {
-      const res = await fetch("https://api.github.com/meta", {
-        headers: {
-          "User-Agent": "fetch",
-          Authorization: `token ${this.token}`,
-        },
-      });
-      this.updateStatus(res);
+      await this.updateStatusFromRateLimitEndpoint();
       this._lastValidated = Date.now();
       const resetInfo = this.reset ? ` resets in ${formatDuration(this.reset - Date.now())}` : "";
-      const resource = res.headers.get("x-ratelimit-resource") || "";
       console.log(
-        `GitHub token ${this.valid ? "validated" : "invalid"} (${res.status}): ${this.remaining}/${this.limit}${resource ? ` [${resource}]` : ""}${resetInfo}`,
+        `GitHub token ${this.valid ? "validated" : "invalid"}: ${this.remaining}/${this.limit} [core]${resetInfo}`,
       );
     } catch (error) {
       // Preserve last-known token state on transport errors (DNS/TLS/timeout)
@@ -133,7 +141,9 @@ async function _validateUntilOneAvailable() {
  * Concurrent callers share the same in-flight promise (coalesced, not once).
  * Returns true if any tokens were revalidated.
  */
-export const revalidateGHTokens = idempotent(_doRevalidateGHTokens, { once: false });
+export const revalidateGHTokens = idempotent(_doRevalidateGHTokens, {
+  once: false,
+});
 
 async function _doRevalidateGHTokens() {
   const now = Date.now();
@@ -177,7 +187,11 @@ export function getAggregateRateLimit() {
   const soonestReset = ghTokens
     .filter((t) => t.valid && t.reset)
     .sort((a, b) => (a.reset || 0) - (b.reset || 0))[0];
-  return { remaining: totalRemaining, limit: totalLimit, reset: soonestReset?.reset };
+  return {
+    remaining: totalRemaining,
+    limit: totalLimit,
+    reset: soonestReset?.reset,
+  };
 }
 
 /** Max jitter (in seconds) added to Retry-After to spread out retry storms. */
@@ -203,7 +217,9 @@ export function formatDuration(ms: number) {
 // --- GitHub App token ---
 
 /** Bootstraps GitHub App installation tokens (samples up to 5 random installations). Coalesced (not once). */
-export const ensureAppToken = idempotent(() => _refreshAppToken(false), { once: false });
+export const ensureAppToken = idempotent(() => _refreshAppToken(false), {
+  once: false,
+});
 
 /** Bootstraps all GitHub App installation tokens (once). Used by the status page. */
 const _ensureAllAppTokensOnce = idempotent(() => _refreshAppToken(true));

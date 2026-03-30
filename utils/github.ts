@@ -45,7 +45,7 @@ export const ghFetch = defineCachedFunction(
         ...opts.headers,
       },
     });
-    token.updateStatus(res);
+    token.updateStatusFromResponse(res);
     if (!res.ok) {
       throw new HTTPError({
         message: `GitHub API error: ${res.status} ${res.statusText}`,

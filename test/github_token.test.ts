@@ -19,6 +19,25 @@ function mockResponse(status: number, headers: Record<string, string> = {}): Res
   return new Response(null, { status, headers });
 }
 
+function mockRateLimitResponse(remaining: number, limit: number, resetEpoch?: number): Response {
+  return new Response(
+    JSON.stringify({
+      resources: {
+        core: {
+          limit,
+          used: limit - remaining,
+          remaining,
+          reset: resetEpoch,
+        },
+      },
+    }),
+    {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    },
+  );
+}
+
 function rateLimitHeaders(
   remaining: number,
   limit: number,
@@ -60,6 +79,9 @@ function mockAppFetch(
     installationsStatus?: number;
     accessToken?: { token: string; expires_at: string };
     accessTokenStatus?: number;
+    rateLimit?: {
+      resources: Record<string, { limit: number; used: number; remaining: number; reset: number }>;
+    };
   } = {},
 ) {
   const {
@@ -70,6 +92,16 @@ function mockAppFetch(
       expires_at: new Date(Date.now() + 3600_000).toISOString(),
     },
     accessTokenStatus = 200,
+    rateLimit = {
+      resources: {
+        core: {
+          limit: 5000,
+          used: 500,
+          remaining: 4500,
+          reset: Math.floor(Date.now() / 1000) + 3600,
+        },
+      },
+    },
   } = opts;
 
   fetchSpy.mockImplementation(async (url: string | URL | Request) => {
@@ -89,19 +121,24 @@ function mockAppFetch(
         headers: { "Content-Type": "application/json" },
       });
     }
-    // validate call (/meta)
-    return mockResponse(200, rateLimitHeaders(4500, 5000));
+    if (urlStr.includes("/rate_limit")) {
+      return new Response(JSON.stringify(rateLimit), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    throw new Error(`Unexpected fetch to ${urlStr} in mockAppFetch`);
   });
 }
 
 // --- GHToken class ---
 
 describe("GHToken", () => {
-  describe("updateStatus", () => {
+  describe("updateStatusFromResponse", () => {
     it("parses rate limit headers from successful response", () => {
       const token = new GHToken("test-token");
       const resetEpoch = Math.floor(Date.now() / 1000) + 3600;
-      token.updateStatus(mockResponse(200, rateLimitHeaders(4999, 5000, resetEpoch)));
+      token.updateStatusFromResponse(mockResponse(200, rateLimitHeaders(4999, 5000, resetEpoch)));
 
       expect(token.valid).toBe(true);
       expect(token.remaining).toBe(4999);
@@ -111,21 +148,21 @@ describe("GHToken", () => {
 
     it("marks token invalid on 401", () => {
       const token = new GHToken("bad-token");
-      token.updateStatus(mockResponse(401, rateLimitHeaders(0, 0)));
+      token.updateStatusFromResponse(mockResponse(401, rateLimitHeaders(0, 0)));
       expect(token.valid).toBe(false);
       expect(token.remaining).toBe(0);
     });
 
     it("marks token valid on 403 (rate limited, not auth failure)", () => {
       const token = new GHToken("test-token");
-      token.updateStatus(mockResponse(403, rateLimitHeaders(0, 5000)));
+      token.updateStatusFromResponse(mockResponse(403, rateLimitHeaders(0, 5000)));
       expect(token.valid).toBe(true);
       expect(token.remaining).toBe(0);
     });
 
     it("handles missing reset header", () => {
       const token = new GHToken("test-token");
-      token.updateStatus(mockResponse(200, rateLimitHeaders(100, 5000)));
+      token.updateStatusFromResponse(mockResponse(200, rateLimitHeaders(100, 5000)));
       expect(token.reset).toBeUndefined();
     });
   });
@@ -139,14 +176,9 @@ describe("GHToken", () => {
       fetchSpy.mockRestore();
     });
 
-    it("updates status from /meta response", async () => {
+    it("updates status from /rate_limit response", async () => {
       const resetEpoch = Math.floor(Date.now() / 1000) + 3600;
-      fetchSpy.mockResolvedValueOnce(
-        mockResponse(200, {
-          ...rateLimitHeaders(4500, 5000, resetEpoch),
-          "x-ratelimit-resource": "core",
-        }),
-      );
+      fetchSpy.mockResolvedValueOnce(mockRateLimitResponse(4500, 5000, resetEpoch));
 
       const token = new GHToken("test-token");
       await token.validate();
@@ -154,13 +186,14 @@ describe("GHToken", () => {
       expect(token.valid).toBe(true);
       expect(token.remaining).toBe(4500);
       expect(token.limit).toBe(5000);
+      expect(token.reset).toBe(resetEpoch * 1000);
       expect(token._lastValidated).toBeTypeOf("number");
       expect(fetchSpy).toHaveBeenCalledOnce();
-      expect(fetchSpy.mock.calls[0]![0]).toMatch(/api\.github\.com\/meta/);
+      expect(fetchSpy.mock.calls[0]![0]).toMatch(/api\.github\.com\/rate_limit/);
     });
 
     it("marks token invalid on 401 response", async () => {
-      fetchSpy.mockResolvedValueOnce(mockResponse(401, rateLimitHeaders(0, 0)));
+      fetchSpy.mockResolvedValueOnce(mockResponse(401));
       const token = new GHToken("bad-token");
       await token.validate();
       expect(token.valid).toBe(false);
@@ -179,7 +212,7 @@ describe("GHToken", () => {
     });
 
     it("sends authorization header", async () => {
-      fetchSpy.mockResolvedValueOnce(mockResponse(200, rateLimitHeaders(5000, 5000)));
+      fetchSpy.mockResolvedValueOnce(mockRateLimitResponse(5000, 5000));
       const token = new GHToken("ghp_secret123");
       await token.validate();
       const [, init] = fetchSpy.mock.calls[0]!;
@@ -532,7 +565,7 @@ describe("ensureTokensValidated", () => {
 
   it("validates tokens until one is available", async () => {
     ghTokens.push(new GHToken("tok1"), new GHToken("tok2"));
-    fetchSpy.mockResolvedValue(mockResponse(200, rateLimitHeaders(4000, 5000)));
+    fetchSpy.mockResolvedValue(mockRateLimitResponse(4000, 5000));
     await ensureTokensValidated();
     expect(ghTokens[0]!.valid).toBe(true);
     expect(ghTokens[0]!.remaining).toBe(4000);
@@ -540,7 +573,7 @@ describe("ensureTokensValidated", () => {
 
   it("falls back to revalidation when no token is available", async () => {
     ghTokens.push(new GHToken("tok"));
-    fetchSpy.mockResolvedValue(mockResponse(401, rateLimitHeaders(0, 0)));
+    fetchSpy.mockResolvedValue(mockResponse(401));
     await ensureTokensValidated();
     expect(ghTokens[0]!.valid).toBe(false);
     expect(fetchSpy.mock.calls.length).toBeGreaterThanOrEqual(1);
@@ -589,7 +622,7 @@ describe("revalidateGHTokens", () => {
     t.valid = true;
     t._lastValidated = Date.now() - 120_000;
     ghTokens.push(t);
-    fetchSpy.mockResolvedValue(mockResponse(200, rateLimitHeaders(4500, 5000)));
+    fetchSpy.mockResolvedValue(mockRateLimitResponse(4500, 5000));
     expect(await revalidateGHTokens()).toBe(true);
     expect(t.remaining).toBe(4500);
   });
