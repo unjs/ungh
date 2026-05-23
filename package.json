@@ -13,19 +13,19 @@
     "typecheck": "tsgo --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^25.8.0",
-    "@typescript/native-preview": "^7.0.0-dev.20260516.1",
-    "@upstash/redis": "^1.38.0",
+    "@types/node": "25.8.0",
+    "@typescript/native-preview": "7.0.0-dev.20260516.1",
+    "@upstash/redis": "1.38.0",
     "@vitest/coverage-v8": "4.1.6",
     "defu": "^6.1.4",
-    "nitro": "^3.0.260311-beta",
-    "openapi-renderer": "^0.1.1",
-    "oxfmt": "^0.50.0",
-    "oxlint": "^1.65.0",
-    "std-env": "^4.1.0",
-    "typescript": "^5.9.3",
-    "ufo": "^1.6.4",
-    "vitest": "^4.1.6"
+    "nitro": "3.0.260311-beta",
+    "openapi-renderer": "0.1.1",
+    "oxfmt": "0.50.0",
+    "oxlint": "1.65.0",
+    "std-env": "4.1.0",
+    "typescript": "5.9.3",
+    "ufo": "1.6.4",
+    "vitest": "4.1.6"
   },
   "packageManager": "pnpm@10.33.4"
 }
