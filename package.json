@@ -23,7 +23,7 @@
     "oxfmt": "^0.50.0",
     "oxlint": "^1.65.0",
     "std-env": "^4.1.0",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "ufo": "^1.6.4",
     "vitest": "^4.1.6"
   },
