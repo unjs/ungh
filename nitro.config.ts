@@ -15,6 +15,14 @@ export default defineNitroConfig({
       cors: true,
       headers: isProduction ? { "access-control-max-age": "21600" } : {}, // 6 hours
     },
+    "repos/*/*/releases": {
+      isr: {
+        allowQuery: ["page"],
+        expiration: isProduction ? 60 * 60 * 6 : false,
+      },
+      cors: true,
+      headers: isProduction ? { "access-control-max-age": "21600" } : {}, // 6 hours
+    },
     "/_status": {
       cache: false,
       basicAuth: parseBasicAuth(process.env.STATUS_AUTH) || false,

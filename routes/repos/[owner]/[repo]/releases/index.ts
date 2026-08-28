@@ -1,5 +1,7 @@
 import { defineRouteMeta, defineHandler } from "nitro";
+import { getQuery, HTTPError } from "nitro/h3";
 import { ghFetch, ghMarkdown } from "~/utils/github";
+import { withQuery } from "ufo";
 import type { GithubRelease } from "~types";
 
 defineRouteMeta({
@@ -18,13 +20,26 @@ defineRouteMeta({
         required: true,
         schema: { type: "string", example: "ofetch" },
       },
+      {
+        name: "page",
+        in: "query",
+        required: false,
+        schema: { type: "number", example: "2" },
+      },
     ],
   },
 });
 
 export default defineHandler(async (event) => {
+  const { page } = getQuery(event);
+  // first validating page, if it's present make sure it's a positive interger, else throw an http error to prevent a cache
+  const pageNr = Number(page);
+  if (page && (!Number.isInteger(pageNr) || pageNr < 1)) {
+    throw new HTTPError("`page` can only be 1 or higher interger or omitted", { status: 400 });
+  }
+  // return typeof page;
   const repo = `${event.context.params!.owner}/${event.context.params!.repo}`;
-  const res = await ghFetch(`/repos/${repo}/releases`);
+  const res = await ghFetch(withQuery(`/repos/${repo}/releases`, { page: pageNr }));
 
   const releases = res.map(
     (i: any) =>
