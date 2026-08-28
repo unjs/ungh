@@ -32,10 +32,10 @@ defineRouteMeta({
 
 export default defineHandler(async (event) => {
   const { page } = getQuery(event);
-  // first validating page, if it's present make sure it's a positive interger, else throw an http error to prevent a cache
+  // first validating page, if it's present make sure it's a positive integer, else throw an http error to prevent a cache
   const pageNr = Number(page);
   if (page && (!Number.isInteger(pageNr) || pageNr < 1)) {
-    throw new HTTPError("`page` can only be 1 or higher interger or omitted", { status: 400 });
+    throw new HTTPError("`page` can only be 1 or higher integer or omitted", { status: 400 });
   }
   // return typeof page;
   const repo = `${event.context.params!.owner}/${event.context.params!.repo}`;
