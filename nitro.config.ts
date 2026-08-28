@@ -16,10 +16,13 @@ export default defineNitroConfig({
       headers: isProduction ? { "access-control-max-age": "21600" } : {}, // 6 hours
     },
     "/repos/*/*/releases": {
-      isr: {
-        allowQuery: ["page"],
-        expiration: isProduction ? 60 * 60 * 6 : false,
-      },
+      isr: isProduction
+        ? {
+            allowQuery: ["page"],
+            passQuery: true,
+            expiration: 60 * 60 * 6,
+          }
+        : false,
       cors: true,
       headers: isProduction ? { "access-control-max-age": "21600" } : {}, // 6 hours
     },

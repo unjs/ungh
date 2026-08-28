@@ -24,7 +24,7 @@ defineRouteMeta({
         name: "page",
         in: "query",
         required: false,
-        schema: { type: "number", example: "2" },
+        schema: { type: "integer", minimum: 1, example: 2 },
       },
     ],
   },
@@ -39,7 +39,7 @@ export default defineHandler(async (event) => {
   }
   // return typeof page;
   const repo = `${event.context.params!.owner}/${event.context.params!.repo}`;
-  const res = await ghFetch(withQuery(`/repos/${repo}/releases`, { page: pageNr }));
+  const res = await ghFetch(withQuery(`/repos/${repo}/releases`, { page }));
 
   const releases = res.map(
     (i: any) =>
