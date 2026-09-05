@@ -27,5 +27,5 @@
     "ufo": "^1.6.4",
     "vitest": "^4.1.6"
   },
-  "packageManager": "pnpm@10.33.4"
+  "packageManager": "pnpm@12.3.0"
 }
