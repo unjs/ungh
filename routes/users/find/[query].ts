@@ -6,7 +6,7 @@ import type { GithubUser } from "~types";
 
 defineRouteMeta({
   openAPI: {
-    description: "Get user repositories.",
+    description: "Find one github user by email or other query.",
     parameters: [
       {
         name: "query",
