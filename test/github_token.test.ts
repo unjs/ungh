@@ -89,7 +89,7 @@ function mockAppFetch(
         headers: { "Content-Type": "application/json" },
       });
     }
-    // validate call (/meta)
+    // validate call (/rate_limit)
     return mockResponse(200, rateLimitHeaders(4500, 5000));
   });
 }
@@ -139,7 +139,7 @@ describe("GHToken", () => {
       fetchSpy.mockRestore();
     });
 
-    it("updates status from /meta response", async () => {
+    it("updates status from /rate_limit response", async () => {
       const resetEpoch = Math.floor(Date.now() / 1000) + 3600;
       fetchSpy.mockResolvedValueOnce(
         mockResponse(200, {
@@ -156,7 +156,7 @@ describe("GHToken", () => {
       expect(token.limit).toBe(5000);
       expect(token._lastValidated).toBeTypeOf("number");
       expect(fetchSpy).toHaveBeenCalledOnce();
-      expect(fetchSpy.mock.calls[0]![0]).toMatch(/api\.github\.com\/meta/);
+      expect(fetchSpy.mock.calls[0]![0]).toMatch(/api\.github\.com\/rate_limit/);
     });
 
     it("marks token invalid on 401 response", async () => {
