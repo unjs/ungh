@@ -51,10 +51,10 @@ export class GHToken {
     if (resetEpoch) this.reset = Number.parseInt(resetEpoch) * 1000;
   }
 
-  /** NOTE: Each call consumes one API request to fetch rate limit info. */
+  /** Fetches token rate limit status via /rate_limit (does not consume API quota). */
   async validate() {
     try {
-      const res = await fetch("https://api.github.com/meta", {
+      const res = await fetch("https://api.github.com/rate_limit", {
         headers: {
           "User-Agent": "fetch",
           Authorization: `token ${this.token}`,
