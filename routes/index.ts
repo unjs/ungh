@@ -10,18 +10,20 @@ defineRouteMeta({
 });
 
 export default defineHandler((event) => {
-  return html(raw(
-    renderHTML({
-      renderer: (getQuery(event).renderer as any) || "scalar",
-      spec: "/openapi.json",
-      meta: {
-        title: "ungh.cc | Unlimited access to GitHub API",
-      },
-      scalar: {
-        hideClientButton: true,
-        theme: "alternate",
-        _integration: "nitro",
-      },
-    })),
+  return html(
+    raw(
+      renderHTML({
+        renderer: (getQuery(event).renderer as any) || "scalar",
+        spec: "/openapi.json",
+        meta: {
+          title: "ungh.cc | Unlimited access to GitHub API",
+        },
+        scalar: {
+          hideClientButton: true,
+          theme: "alternate",
+          _integration: "nitro",
+        },
+      }),
+    ),
   );
 });

@@ -68,7 +68,8 @@ export default defineHandler(async (event) => {
     })
     .join("");
 
-  return html(/* html */ raw(`<!DOCTYPE html>
+  return html(
+    /* html */ raw(`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -131,7 +132,8 @@ export default defineHandler(async (event) => {
     </div>
   </div>
 </body>
-</html>`));
+</html>`),
+  );
 });
 
 function computeUsed(remaining: number, limit: number): number {
