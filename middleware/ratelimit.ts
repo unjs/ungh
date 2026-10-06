@@ -6,7 +6,7 @@ import { getAggregateRateLimit, retryAfterSeconds } from "~/utils/github_token";
 const LOW_PRIORITY_THRESHOLD = 0.25;
 
 export default defineMiddleware(async (event, next) => {
-  if (event.url.pathname.startsWith("_")) {
+  if (event.url.pathname.startsWith("/_")) {
     return next();
   }
 
