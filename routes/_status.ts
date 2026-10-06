@@ -1,5 +1,6 @@
 import { defineRouteMeta, defineHandler } from "nitro";
-import { html } from "nitro/h3";
+import { html, raw } from "nitro/h3";
+import { requireAuth } from "~/utils/auth";
 import { ghTokens, ensureAllTokensValidated, formatDuration } from "~/utils/github_token";
 
 defineRouteMeta({
@@ -8,7 +9,9 @@ defineRouteMeta({
   },
 });
 
-export default defineHandler(async () => {
+export default defineHandler(async (event) => {
+  await requireAuth(event);
+
   await ensureAllTokensValidated();
 
   const tokens = ghTokens.map((t, i) => {
@@ -65,7 +68,7 @@ export default defineHandler(async () => {
     })
     .join("");
 
-  return html(/* html */ `<!DOCTYPE html>
+  return html(/* html */ raw(`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -128,7 +131,7 @@ export default defineHandler(async () => {
     </div>
   </div>
 </body>
-</html>`);
+</html>`));
 });
 
 function computeUsed(remaining: number, limit: number): number {

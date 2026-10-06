@@ -8,7 +8,7 @@ This project is based on [Nitro](https://nitro.build) v3, [h3](https://h3.dev/),
 
 ## Project Structure
 
-`routes/` contains route handlers. `utils/` has shared utilities (`github.ts` for GitHub API, `markdown.ts` for markdown processing). `types/` for shared types. `public/` holds static assets. Config: `nitro.config.ts` (storage, routeRules, openAPI), `tsconfig.json` (extends `nitro/tsconfig`, `~/*` path alias).
+`routes/` contains route handlers. `utils/` has shared utilities (`github.ts` for GitHub API, `markdown.ts` for markdown processing). `types/` for shared types. `public/` holds static assets. Config: `nitro.config.ts` (storage, routeRules, openAPI, `rolldownConfig.tsconfig: true` so rolldown resolves tsconfig `paths` — Nitro defaults it to `false`), `tsconfig.json` (extends `nitro/tsconfig`, `~/*` path alias).
 
 ## Conventions
 

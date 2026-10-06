@@ -1,5 +1,5 @@
 import { defineRouteMeta, defineHandler, html } from "nitro";
-import { getQuery } from "nitro/h3";
+import { getQuery, raw } from "nitro/h3";
 
 import { renderHTML } from "openapi-renderer";
 
@@ -10,7 +10,7 @@ defineRouteMeta({
 });
 
 export default defineHandler((event) => {
-  return html(
+  return html(raw(
     renderHTML({
       renderer: (getQuery(event).renderer as any) || "scalar",
       spec: "/openapi.json",
@@ -22,6 +22,6 @@ export default defineHandler((event) => {
         theme: "alternate",
         _integration: "nitro",
       },
-    }),
+    })),
   );
 });

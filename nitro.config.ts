@@ -8,20 +8,15 @@ export default defineNitroConfig({
     GH_APP_ID: process.env.GH_APP_ID,
     GH_APP_PRIVATE_KEY: process.env.GH_APP_PRIVATE_KEY,
   },
+  rolldownConfig: {
+    tsconfig: true,
+  },
   routeRules: {
     "/**": {
       // 6 hours in production, no cache in development
       isr: isProduction ? 60 * 60 * 6 : false,
       cors: true,
       headers: isProduction ? { "access-control-max-age": "21600" } : {}, // 6 hours
-    },
-    "/_status": {
-      cache: false,
-      basicAuth: parseBasicAuth(process.env.STATUS_AUTH) || false,
-    },
-    "/_metrics": {
-      cache: false,
-      basicAuth: parseBasicAuth(process.env.STATUS_AUTH) || false,
     },
     // Backward compatibility for changelogen
     "/user/find/**": { proxy: "/users/find/**" },
@@ -48,9 +43,3 @@ export default defineNitroConfig({
     },
   },
 });
-
-function parseBasicAuth(auth?: string) {
-  if (!auth) return undefined;
-  const [username, ...rest] = auth.split(":");
-  return { username, password: rest.join(":") };
-}
