@@ -29,6 +29,10 @@ export default defineHandler(async (event) => {
       name: user.name,
       twitter: user.twitter_username,
       avatar: user.avatar_url,
+      company: user.company,
+      location: user.location,
+      blog: user.blog,
+      email: user.email,
     },
   };
 });
