@@ -144,6 +144,29 @@ Get latest repository release.
 }
 ```
 
+### `/repos/{owner}/{name}/releases/tags/{tag}`
+
+Get repository release by tag.
+
+**Example:** https://ungh.cc/repos/nuxt/framework/releases/tags/v3.0.0-rc.13
+
+```json
+{
+  "release": {
+    "id": 82066265,
+    "tag": "v3.0.0-rc.13",
+    "author": "pi0",
+    "name": "v3.0.0-rc.13",
+    "draft": false,
+    "prerelease": false,
+    "createdAt": "2022-11-04T11:37:49Z",
+    "publishedAt": "2022-11-04T11:41:59Z",
+    "markdown": "....",
+    "html": "..."
+  }
+}
+```
+
 ### `/repos/{owner}/{name}/branches`
 
 Get all the branches of a repository
