@@ -5,7 +5,7 @@ import type { GithubRepo } from "~types";
 
 defineRouteMeta({
   openAPI: {
-    description: "Get repository readme file on main branch (not cached).",
+    description: "GitHub repository information.",
     parameters: [
       {
         name: "owner",
