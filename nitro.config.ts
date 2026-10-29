@@ -1,7 +1,7 @@
-import { defineNitroConfig } from "nitro/config";
+import { defineConfig } from "nitro";
 import { provider, isProduction } from "std-env";
 
-export default defineNitroConfig({
+export default defineConfig({
   serverDir: ".",
   runtimeConfig: {
     GH_TOKEN: process.env.GH_TOKEN,
@@ -21,15 +21,17 @@ export default defineNitroConfig({
     // Backward compatibility for changelogen
     "/user/find/**": { proxy: "/users/find/**" },
   },
-  storage: {
+  kv: {
     "/cache": provider === "vercel" ? { driver: "vercel-runtime-cache" } : { driver: "memory" },
     "/redis": provider === "vercel" ? { driver: "upstash" } : { driver: "memory" },
   },
-  devStorage: {
-    "/cache/gh": {
-      driver: "memory",
-      // driver: "fs",
-      // base: "./.cache/gh",
+  $development: {
+    kv: {
+      "/cache/gh": {
+        driver: "memory",
+        // driver: "fs",
+        // base: "./.cache/gh",
+      },
     },
   },
   experimental: {
