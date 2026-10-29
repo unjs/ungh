@@ -1,5 +1,5 @@
 import { defineConfig } from "nitro";
-import { provider, isProduction } from "std-env";
+import { provider } from "std-env";
 
 export default defineConfig({
   serverDir: ".",
@@ -12,14 +12,18 @@ export default defineConfig({
     tsconfig: true,
   },
   routeRules: {
-    "/**": {
-      // 6 hours in production, no cache in development
-      isr: isProduction ? 60 * 60 * 6 : false,
-      cors: true,
-      headers: isProduction ? { "access-control-max-age": "21600" } : {}, // 6 hours
-    },
+    "/**": { cors: true },
     // Backward compatibility for changelogen
     "/user/find/**": { proxy: "/users/find/**" },
+  },
+  // Applied on `nitro build` regardless of NODE_ENV (no cache in development)
+  $production: {
+    routeRules: {
+      "/**": {
+        isr: 60 * 60 * 6, // 6 hours
+        headers: { "access-control-max-age": "21600" }, // 6 hours
+      },
+    },
   },
   kv: {
     "/cache": provider === "vercel" ? { driver: "vercel-runtime-cache" } : { driver: "memory" },

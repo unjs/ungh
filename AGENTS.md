@@ -47,7 +47,7 @@ Docs: https://nitro.build (the RC no longer ships docs in `node_modules/nitro/sk
 **Config (`nitro.config.ts`):**
 
 - `routeRules` — Per-route pattern headers, redirects, proxy, cache, basicAuth
-- `$development` / `$production` — Environment-specific config
+- `$development` / `$production` — Environment-specific config. `$production` applies on every `nitro build`; prefer it over `std-env`'s `isProduction` (checks `NODE_ENV`, which is not set during `nitro build` or Vercel builds)
 - `kv` — KV mount config (unstorage drivers; requires `unstorage` installed). Dev overrides go in `$development: { kv }`. `storage` / `devStorage` are deprecated
 - `cache` — Cache storage `driver` (`memory` | `fs` | `kv`; defaults to `kv` when a `/cache` kv mount exists) + global `defaults`
 - `prerender: { routes, crawlLinks }` — Static pre-rendering
