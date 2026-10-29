@@ -23,6 +23,9 @@ export default defineConfig({
         isr: 60 * 60 * 6, // 6 hours
         headers: { "access-control-max-age": "21600" }, // 6 hours
       },
+      // Auth-protected and live: ISR would cache authenticated responses for everyone
+      "/_status": { isr: false },
+      "/_metrics": { isr: false },
     },
   },
   kv: {
