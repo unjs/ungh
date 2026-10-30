@@ -1,40 +1,44 @@
-import { defineNitroConfig } from "nitro/config";
-import { provider, isProduction } from "std-env";
+import { defineConfig } from "nitro";
+import { provider } from "std-env";
 
-export default defineNitroConfig({
+export default defineConfig({
   serverDir: ".",
   runtimeConfig: {
     GH_TOKEN: process.env.GH_TOKEN,
     GH_APP_ID: process.env.GH_APP_ID,
     GH_APP_PRIVATE_KEY: process.env.GH_APP_PRIVATE_KEY,
   },
+  rolldownConfig: {
+    tsconfig: true,
+  },
   routeRules: {
-    "/**": {
-      // 6 hours in production, no cache in development
-      isr: isProduction ? 60 * 60 * 6 : false,
-      cors: true,
-      headers: isProduction ? { "access-control-max-age": "21600" } : {}, // 6 hours
-    },
-    "/_status": {
-      cache: false,
-      basicAuth: parseBasicAuth(process.env.STATUS_AUTH) || false,
-    },
-    "/_metrics": {
-      cache: false,
-      basicAuth: parseBasicAuth(process.env.STATUS_AUTH) || false,
-    },
+    "/**": { cors: true },
     // Backward compatibility for changelogen
     "/user/find/**": { proxy: "/users/find/**" },
   },
-  storage: {
+  // Applied on `nitro build` regardless of NODE_ENV (no cache in development)
+  $production: {
+    routeRules: {
+      "/**": {
+        isr: 60 * 60 * 6, // 6 hours
+        headers: { "access-control-max-age": "21600" }, // 6 hours
+      },
+      // Auth-protected and live: ISR would cache authenticated responses for everyone
+      "/_status": { isr: false },
+      "/_metrics": { isr: false },
+    },
+  },
+  kv: {
     "/cache": provider === "vercel" ? { driver: "vercel-runtime-cache" } : { driver: "memory" },
     "/redis": provider === "vercel" ? { driver: "upstash" } : { driver: "memory" },
   },
-  devStorage: {
-    "/cache/gh": {
-      driver: "memory",
-      // driver: "fs",
-      // base: "./.cache/gh",
+  $development: {
+    kv: {
+      "/cache/gh": {
+        driver: "memory",
+        // driver: "fs",
+        // base: "./.cache/gh",
+      },
     },
   },
   experimental: {
@@ -48,9 +52,3 @@ export default defineNitroConfig({
     },
   },
 });
-
-function parseBasicAuth(auth?: string) {
-  if (!auth) return undefined;
-  const [username, ...rest] = auth.split(":");
-  return { username, password: rest.join(":") };
-}
