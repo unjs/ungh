@@ -1,4 +1,5 @@
 import { defineRouteMeta, defineHandler } from "nitro";
+import { requireAuth } from "~/utils/auth";
 import { ghTokens, ensureAllTokensValidated } from "~/utils/github_token";
 
 defineRouteMeta({
@@ -8,6 +9,8 @@ defineRouteMeta({
 });
 
 export default defineHandler(async (event) => {
+  await requireAuth(event);
+
   await ensureAllTokensValidated();
 
   const now = Date.now();

@@ -1,9 +1,9 @@
 import { defineCachedFunction } from "nitro/cache";
-import type { CacheOptions } from "nitro/types";
+import type { CachedFunctionOptions } from "nitro/types";
 import { HTTPError } from "nitro/h3";
 import { ghTokens, acquireGHToken, formatDuration, retryAfterSeconds } from "~/utils/github_token";
 
-export const commonCacheOptions: CacheOptions = {
+export const commonCacheOptions: CachedFunctionOptions = {
   group: "gh",
   maxAge: 60 * 60 * 24, // 24 hours
   staleMaxAge: 60 * 60 * 48, // 48 hours
@@ -11,7 +11,7 @@ export const commonCacheOptions: CacheOptions = {
   base: ["/cache"],
 };
 
-const cacheOptions = (name: string): CacheOptions => ({
+const cacheOptions = (name: string): CachedFunctionOptions => ({
   ...commonCacheOptions,
   name,
 });
