@@ -25,7 +25,7 @@ Two files handle all GitHub API interaction:
 ```
 new GHToken(token)          -> valid=undefined, remaining=undefined
   |
-validate()                  -> calls GET /meta, sets valid/remaining/limit/reset
+validate()                  -> calls GET /rate_limit, sets valid/remaining/limit/reset
   |
 updateStatus(response)      -> called on every ghFetch response to keep rate limits current
   |
@@ -60,7 +60,7 @@ Subsequent requests rely on `revalidateGHTokens()` (called from `acquireGHToken`
 
 Runs once via `idempotent()` wrapper (`once: true`):
 
-1. Validate all PAT tokens in parallel (each calls GET /meta — costs 1 API request)
+1. Validate all PAT tokens in parallel (each calls GET /rate_limit — does not consume API quota)
 2. Bootstrap App tokens (JWT -> list installations -> create installation tokens)
 
 ## Revalidation (`revalidateGHTokens`)
