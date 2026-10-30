@@ -283,6 +283,24 @@ Get user repositories.
 }
 ```
 
+### `/users/{username}/orgs`
+
+Get user organizations.
+
+**Example:** https://ungh.cc/users/pi0/orgs
+
+```json
+{
+  "orgs": [
+    {
+      "id": 80154025,
+      "name": "unjs",
+      "description": "Unified JavaScript Tools"
+    }
+  ]
+}
+```
+
 ### `/users/find/{query}`
 
 Find one github user by email or other query.
