@@ -252,7 +252,12 @@ Find one github user by username.
     "id": 5158436,
     "name": "Pooya Parsa",
     "twitter": null,
-    "username": "pi0"
+    "username": "pi0",
+    "avatar": "https://avatars.githubusercontent.com/u/5158436?v=4",
+    "company": "@unjs . @nitrojs . @h3js . @nuxt ",
+    "location": "Netherlands",
+    "blog": "https://pi0.io",
+    "email": "pooya@pi0.io"
   }
 }
 ```
