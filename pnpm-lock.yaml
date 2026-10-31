@@ -30,10 +30,10 @@ importers:
         specifier: ^0.1.1
         version: 0.1.1
       oxfmt:
-        specifier: '>=0.74.0'
+        specifier: '>=0.75.0'
         version: 0.75.0
       oxlint:
-        specifier: ^1.89.0
+        specifier: ^1.90.0
         version: 1.90.0
       std-env:
         specifier: ^4.3.0
