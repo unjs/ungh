@@ -34,7 +34,7 @@ Docs: https://nitro.build (the RC no longer ships docs in `node_modules/nitro/sk
 
 - `defineCachedHandler(handler, opts)` / `defineCachedFunction(fn, opts)` from `nitro/cache` — Response/function caching (option types: `CachedHandlerOptions` / `CachedFunctionOptions` from `nitro/types`; `CacheOptions` is deprecated)
 - `useRuntimeConfig()` from `nitro/runtime-config` — Access runtime config (env vars)
-- `serverFetch(url, opts)` from `nitro/app` — Internal/external fetch (replaces `$fetch`)
+- `serverFetch(url, opts)` from `nitro/app` - Internal app route fetch only (use global `fetch` for external URLs; replaces `$fetch` for internal routes)
 - `getQuery`, `getRouterParam`, `redirect`, `HTTPError` from `nitro/h3` — H3 utilities
 - `useKV(base?)` from `nitro/kv` — KV storage (`getItem`, `setItem`, `removeItem`, `getKeys`); `useStorage` from `nitro/storage` is deprecated
 - `useDatabase()` from `nitro/database` — SQL via tagged template (requires `experimental: { database: true }`)
