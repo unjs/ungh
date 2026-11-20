@@ -1,5 +1,6 @@
 import { defineRouteMeta } from "nitro";
 import { defineCachedHandler } from "nitro/cache";
+import { HTTPError } from "nitro/h3";
 import { ghRepo, ghMarkdown, commonCacheOptions } from "~/utils/github";
 import { resolveMarkdownRelativeLinks } from "~/utils/markdown";
 
@@ -31,6 +32,12 @@ export default defineCachedHandler(
     const defaultBranch = await ghRepo(repo).then((r) => r.default_branch || "main");
     const cdnBaseURL = `${GH_RAW_URL}/${repo}/${defaultBranch}`;
     const res = await fetch(`${cdnBaseURL}/README.md`);
+    if (!res.ok) {
+      throw new HTTPError({
+        message: `README not found: ${res.statusText || res.status}`,
+        statusCode: res.status,
+      });
+    }
     const markdown = await res.text();
     const html = await ghMarkdown(markdown, repo, "readme");
     return {

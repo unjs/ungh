@@ -46,4 +46,31 @@ describe("readme route handler", () => {
     expect(body.markdown).toContain("# ofetch");
     expect(body.html).toContain("<p># ofetch");
   });
+
+  it("throws HTTPError when README is not found (non-2xx response)", async () => {
+    vi.spyOn(ghUtils, "ghRepo").mockResolvedValue({ default_branch: "main" } as any);
+
+    fetchSpy.mockResolvedValueOnce(
+      new Response("404: Not Found", {
+        status: 404,
+        statusText: "Not Found",
+      }),
+    );
+
+    const event = {
+      url: new URL("/repos/unjs/ofetch/readme", "https://ungh.cc"),
+      req: { headers: new Headers() },
+      res: { headers: new Headers() },
+      context: {
+        params: {
+          owner: "unjs",
+          repo: "ofetch",
+        },
+      },
+    } as any;
+
+    await expect((readmeHandler as any)(event)).rejects.toMatchObject({
+      status: 404,
+    });
+  });
 });
