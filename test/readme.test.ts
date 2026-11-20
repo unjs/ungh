@@ -49,6 +49,7 @@ describe("readme route handler", () => {
 
   it("throws HTTPError when README is not found (non-2xx response)", async () => {
     vi.spyOn(ghUtils, "ghRepo").mockResolvedValue({ default_branch: "main" } as any);
+    const ghMarkdownSpy = vi.spyOn(ghUtils, "ghMarkdown");
 
     fetchSpy.mockResolvedValueOnce(
       new Response("404: Not Found", {
@@ -70,7 +71,9 @@ describe("readme route handler", () => {
     } as any;
 
     await expect((readmeHandler as any)(event)).rejects.toMatchObject({
-      status: 404,
+      statusCode: 404,
+      message: expect.stringContaining("README not found"),
     });
+    expect(ghMarkdownSpy).not.toHaveBeenCalled();
   });
 });

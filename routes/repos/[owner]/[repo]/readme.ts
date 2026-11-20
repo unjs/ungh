@@ -33,6 +33,7 @@ export default defineCachedHandler(
     const cdnBaseURL = `${GH_RAW_URL}/${repo}/${defaultBranch}`;
     const res = await fetch(`${cdnBaseURL}/README.md`);
     if (!res.ok) {
+      await res.body?.cancel().catch(() => {});
       throw new HTTPError({
         message: `README not found: ${res.statusText || res.status}`,
         statusCode: res.status,
